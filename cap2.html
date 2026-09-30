@@ -1,0 +1,1444 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<title>Cleto y Flauta — Cap. 2: Super abuela</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#010202; --paper:#fefefc; --amar:#f69515; --verde:#008a05; --azul:#0466ef;
+  --gris:#989597; --rosa:#f4c9d8; --turq:#4abbda; --rojo:#d7261e; --cacatua:#e6d84a; --oro:#f5c518;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:#000;overflow:hidden;color:var(--ink);
+  font-family:"Comic Neue","Comic Sans MS","Chalkboard SE",cursive;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#game{position:fixed;inset:0;touch-action:none;display:flex;align-items:center;justify-content:center;background:#000}
+#game canvas{image-rendering:pixelated;image-rendering:crisp-edges;width:100%;height:100%;object-fit:contain}
+button{font:inherit;cursor:pointer;color:var(--ink)}
+button:focus-visible{outline:4px solid var(--azul);outline-offset:3px}
+
+.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;box-sizing:border-box;padding:max(16px,env(safe-area-inset-top,0px)) 16px max(16px,env(safe-area-inset-bottom,0px))}
+.black{background:#000;color:#fff}
+.white{background:var(--paper)}
+
+#loading b{font:700 22px/1 Verdana,Arial,sans-serif;letter-spacing:.02em}
+.bar{width:min(300px,70vw);height:4px;margin-top:18px;background:#222;border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#333,#fff);transition:width .2s}
+
+#cacatua p{color:var(--cacatua);font:400 17px/1.3 Verdana,Arial,sans-serif;opacity:0;transition:opacity .8s}
+#cacatua.on p{opacity:1}
+
+#logo .wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+#logo h1{font-size:clamp(40px,8vw,76px);margin:0;font-weight:400;letter-spacing:-.01em;opacity:0;transition:opacity 1s}
+#logo.on h1{opacity:1}
+#logo .duo{display:flex;align-items:flex-end;gap:clamp(4px,3vw,30px);border-bottom:6px solid var(--ink);padding:0 10px;opacity:0;transition:opacity 1s .3s}
+#logo.on .duo{opacity:1}
+#logo .duo img{height:clamp(110px,22vh,190px);width:auto;display:block}
+
+.btn{border:4px solid var(--ink);background:var(--paper);padding:10px 30px;font-size:24px;font-weight:700;
+  border-radius:14px 10px 16px 9px;box-shadow:5px 5px 0 var(--ink);transition:transform .08s,box-shadow .08s,background .1s}
+.btn:hover{background:var(--amar)}
+.btn:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink)}
+.btn.small{font-size:18px;padding:7px 18px;box-shadow:4px 4px 0 var(--ink)}
+.keys{font-size:14px;color:#444;margin:0}
+kbd{font:700 13px/1 "Comic Neue",cursive;border:2px solid var(--ink);border-radius:5px;padding:1px 5px;background:#fff}
+
+#card{cursor:pointer;text-align:center}
+#card .n{font-size:22px;color:#777;margin:0 0 42px;opacity:0;transition:opacity 1.2s}
+#card .ttl{font-size:clamp(24px,4.5vw,34px);font-weight:700;margin:0;opacity:0;transition:opacity 1.2s .3s;max-width:24ch}
+#card.on .n,#card.on .ttl{opacity:1}
+#card .goal{margin:34px 0 0;font-size:17px;color:#555;max-width:36ch;opacity:0;transition:opacity 1s 1s}
+#card.on .goal{opacity:1}
+#card .hint{position:absolute;bottom:max(22px,env(safe-area-inset-bottom,0px));font-size:15px;color:#888}
+
+.panel-bg{background:rgba(1,2,2,.45)}
+.panel{background:var(--paper);border:5px solid var(--ink);border-radius:10px 14px 9px 16px;padding:22px 26px;
+  box-shadow:8px 8px 0 var(--ink);display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;
+  max-width:440px;width:100%;box-sizing:border-box}
+.panel h3{margin:0;font-size:28px}
+.panel p{margin:0;font-size:18px}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.stats{display:grid;grid-template-columns:auto auto;gap:4px 18px;font-size:19px;text-align:left}
+.stats b{text-align:right;font-variant-numeric:tabular-nums}
+
+#later{background:#9a9a9a;color:#6b6b6b;font:700 italic clamp(26px,5vw,40px)/1 "Comic Neue",cursive}
+#later span{text-shadow:0 1px 0 #b8b8b8}
+#ending{background:#000;padding:0}
+#ending img{width:100%;height:100%;object-fit:contain;display:block}
+
+/* estéreo: elegir la radio antes de arrancar */
+#radio{background:var(--azul);color:#fff}
+#radio .console{background:#8b8f93;border:5px solid var(--ink);border-radius:14px;padding:18px 22px;box-shadow:8px 8px 0 rgba(0,0,0,.35);
+  display:flex;flex-direction:column;align-items:center;gap:14px;max-width:420px;width:100%;box-sizing:border-box}
+#radio .cd{font:700 14px Verdana,Arial,sans-serif;color:#222;align-self:flex-start}
+#radio .lcd{background:#0c1c0f;border:3px solid #222;border-radius:5px;width:100%;padding:14px 8px;text-align:center;
+  font:700 30px Verdana,Arial,sans-serif;color:#3cff5a;text-shadow:0 0 6px #3cff5a}
+#radio .eq{font:700 11px Verdana,Arial,sans-serif;color:#222;align-self:flex-end}
+#radio .row{margin-top:6px}
+#radio h2{margin:0 0 4px;font-size:26px}
+#radio p{margin:0 0 6px;font-size:16px;max-width:34ch;text-align:center}
+
+#hud{position:fixed;z-index:5;top:calc(10px + env(safe-area-inset-top,0px));left:12px;display:flex;gap:10px;flex-wrap:wrap;pointer-events:none;max-width:calc(100% - 24px)}
+#hudR{position:fixed;z-index:5;top:calc(10px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:10px;flex-wrap:wrap;pointer-events:none}
+.chip{background:var(--paper);border:3px solid var(--ink);border-radius:9px;padding:3px 11px;font-weight:700;font-size:20px;
+  display:flex;align-items:center;gap:7px;font-variant-numeric:tabular-nums;box-shadow:3px 3px 0 var(--ink)}
+.chip.warn{background:#ffb3b3}
+.fuelbar{width:70px;height:14px;border:2px solid var(--ink);border-radius:4px;background:#d8d5d0;overflow:hidden;display:inline-block}
+.fuelbar i{display:block;height:100%;width:100%;background:#3ad655;transition:width .25s linear,background .25s}
+.fuelbar.low i{background:#e33b2e}
+#tr{position:fixed;z-index:6;top:calc(60px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px}
+#tr button{width:44px;height:44px;border:3px solid var(--ink);border-radius:9px;background:var(--paper);font-weight:700;font-size:18px;box-shadow:3px 3px 0 var(--ink);padding:0}
+#help{position:fixed;z-index:5;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:12px;font-size:13px;background:rgba(254,254,252,.9);
+  border:2px solid var(--ink);border-radius:8px;padding:4px 9px;pointer-events:none;max-width:calc(100% - 24px);box-sizing:border-box}
+#sub{position:fixed;z-index:6;left:50%;bottom:calc(64px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  background:var(--paper);border:3px solid var(--ink);border-radius:8px;padding:6px 14px;font-size:20px;font-weight:700;
+  max-width:min(560px,calc(100% - 32px));box-sizing:border-box;text-align:center;pointer-events:none}
+#sub em{font-style:normal;color:#666;font-weight:400;margin-right:6px}
+#skipHint{position:fixed;z-index:6;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:15px;color:#fff;background:rgba(1,2,2,.55);padding:4px 10px;border-radius:8px;pointer-events:none}
+#toast{position:fixed;z-index:6;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);font-size:22px;font-weight:700;
+  background:var(--amar);border:3px solid var(--ink);border-radius:8px;padding:4px 14px;pointer-events:none;max-width:calc(100% - 32px);box-sizing:border-box;text-align:center}
+
+#touch{position:fixed;inset:0;z-index:4;pointer-events:none}
+.tb{position:absolute;border-radius:16px;border:4px solid var(--ink);font-weight:700;pointer-events:auto;touch-action:none;padding:0;background:var(--paper)}
+#tLeft{left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));width:74px;height:74px;font-size:26px}
+#tRight{left:calc(100px + env(safe-area-inset-left,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));width:74px;height:74px;font-size:26px}
+#tBrake{right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));width:74px;height:74px;background:#ffb3b3;font-size:14px}
+#tGas{right:calc(100px + env(safe-area-inset-right,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));width:88px;height:88px;background:var(--amar);font-size:15px}
+#tTurbo{right:calc(56px + env(safe-area-inset-right,0px));bottom:calc(132px + env(safe-area-inset-bottom,0px));width:64px;height:64px;background:var(--oro);font-size:12px}
+@media (prefers-reduced-motion:reduce){#card .n,#card .ttl,#card .goal,#cacatua p,#logo h1,#logo .duo{transition:none}}
+</style>
+
+<div id="game" aria-label="Cap. 2 — Super abuela"></div>
+
+<div id="hud" hidden>
+  <div class="chip" id="chipSpeed">0 km/h</div>
+  <div class="chip" id="chipStage">Etapa 1/5</div>
+  <div class="chip" id="chipFuel">⛽<span class="fuelbar" id="fuelBar"><i id="fuelFill"></i></span></div>
+</div>
+<div id="hudR" hidden>
+  <div class="chip" id="chipTime">1:00</div>
+  <div class="chip" id="chipRadio">♪ Reggae</div>
+</div>
+<div id="tr" hidden>
+  <button id="muteBtn" aria-label="Silenciar">♪</button>
+  <button id="pauseBtn" aria-label="Pausa">II</button>
+</div>
+<div id="help" hidden><kbd>←</kbd><kbd>→</kbd> volante · <kbd>↑</kbd> acelerar · <kbd>↓</kbd> frenar · <kbd>Espacio</kbd> turbo · <kbd>M</kbd> radio · <kbd>Esc</kbd> pausa</div>
+<div id="skipHint" hidden>Tocá o apretá una tecla para saltear</div>
+<div id="sub" hidden></div>
+<div id="toast" hidden></div>
+<div id="touch" hidden>
+  <button class="tb" id="tLeft" aria-label="Izquierda">◀</button>
+  <button class="tb" id="tRight" aria-label="Derecha">▶</button>
+  <button class="tb" id="tTurbo" aria-label="Turbo">Turbo</button>
+  <button class="tb" id="tBrake" aria-label="Frenar">Freno</button>
+  <button class="tb" id="tGas" aria-label="Acelerar">Acelerar</button>
+</div>
+
+<section class="screen black" id="loading"><b>Cargando...</b><div class="bar"><i id="barFill"></i></div></section>
+<section class="screen black" id="cacatua" hidden><p>Cacatúa producciones presenta...</p></section>
+
+<section class="screen white" id="logo" hidden>
+  <div class="wrap">
+    <h1>Cleto y Flauta</h1>
+    <div class="duo"><img id="tCleto" alt="Cleto"><img id="tFlauta" alt="Flauta"></div>
+  </div>
+</section>
+
+<section class="screen white" id="card" hidden>
+  <p class="n">Capítulo Nº2</p>
+  <p class="ttl">Super abuela</p>
+  <p class="goal">Manejá el auto azul de Cleto por el barrio, esquivá a la abuela en la senda peatonal y llegá entero a cada etapa. Estilo Out Run.</p>
+  <p class="hint">Tocá o apretá una tecla para empezar</p>
+</section>
+
+<section class="screen white" id="radio" hidden>
+  <h2>Elegí la radio</h2>
+  <p>Cleto: "…voy a poner música tranquila."</p>
+  <div class="console">
+    <div class="cd">Compac disk</div>
+    <div class="lcd" id="lcdText">Reggae</div>
+    <div class="eq">Equalizer Stereo directx sound</div>
+  </div>
+  <div class="row">
+    <button class="btn small" id="radioPrev">◀</button>
+    <button class="btn" id="radioGo">Arrancar</button>
+    <button class="btn small" id="radioNext">▶</button>
+  </div>
+</section>
+
+<section class="screen" id="later" hidden><span id="laterTxt">Un rato mas tarde...</span></section>
+<section class="screen" id="ending" hidden><img id="endImg" alt=""></section>
+
+<section class="screen panel-bg" id="pause" hidden>
+  <div class="panel">
+    <h3>Pausa</h3>
+    <p>Cleto para el auto un segundo.</p>
+    <div class="row"><button class="btn small" id="resume">Seguir</button><button class="btn small" id="restart">Reiniciar</button></div>
+    <button class="btn small" id="toMenu">Capítulos</button>
+  </div>
+</section>
+
+<section class="screen panel-bg" id="over" hidden>
+  <div class="panel">
+    <h3 id="overTitle">¡Se acabó el tiempo!</h3>
+    <p id="overBody">La abuela llegó antes que vos. Volvés a intentarlo desde <b id="overWhere">la etapa 1</b>.</p>
+    <div class="row"><button class="btn small" id="cont">Reintentar</button><button class="btn small" id="toMenu2">Capítulos</button></div>
+  </div>
+</section>
+
+<section class="screen panel-bg" id="results" hidden>
+  <div class="panel">
+    <h3>¡Capítulo Nº2 superado!</h3>
+    <p id="resultsBody">Cleto llega dando vueltas a upa de la Super abuela.</p>
+    <div class="stats">
+      <span>Tiempo</span><b id="rTime">0:00</b>
+      <span>Puntaje</span><b id="rScore">0</b>
+      <span>Piononos</span><b id="rPio">0</b>
+      <span>Fotomultas</span><b id="rMultas">0</b>
+    </div>
+    <div class="row"><button class="btn small" id="again">Jugar de nuevo</button><button class="btn small" id="toMenu3">Capítulos</button></div>
+  </div>
+</section>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const INK = '#010202';
+const PAL = { paper:'#fefefc', verde:'#0a8f0d', verdeOsc:'#077a0a', azul:'#0466ef', rosa:'#f4c9d8', turq:'#4abbda',
+  gris:'#989597', vereda:'#b9b7b4', veredaOsc:'#a09e97', asfalto:'#3b3b39', asfaltoOsc:'#343432',
+  amar:'#f69515', oro:'#f5c518', rojo:'#d7261e', marron:'#8f591e', naranja:'#f28c1c', celeste:'#6ec6f2',
+  tierra:'#a9835a', tierraOsc:'#93714c', banquina:'#c2ad82', banquinaOsc:'#ab9871' };
+
+/* ---------------- helpers de dibujo "estilo Paint" (mismo enfoque que cleto3d.html) ---------------- */
+function mkCanvas(w, h){ const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+function paintCanvas(w, h, fn){ const [c, x] = mkCanvas(w, h); fn(x, w, h); return c; }
+function ink(x, w){ x.strokeStyle = INK; x.lineWidth = w; x.lineJoin = 'round'; x.lineCap = 'round'; }
+function rr(x, px, py, w, h, r){ x.beginPath(); x.moveTo(px+r,py); x.arcTo(px+w,py,px+w,py+h,r); x.arcTo(px+w,py+h,px,py+h,r); x.arcTo(px,py+h,px,py,r); x.arcTo(px,py,px+w,py,r); x.closePath(); }
+function seeded(n){ let s = n; return () => (s = (s * 9301 + 49297) % 233280) / 233280; }
+
+/* ---------------- pantallas ---------------- */
+const SCREENS = ['loading','cacatua','logo','card','radio','later','ending','pause','over','results'];
+function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); }
+function hideAll(){ for (const s of SCREENS) $('#'+s).hidden = true; }
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* ---------------- audio ---------------- */
+let actx = null, muted = false;
+function unlockAudio(){
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function tone(f1, f2, dur, type='square', vol=.12, delay=0){
+  if (!actx || muted) return;
+  const t0 = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(Math.max(20,f2), t0 + dur);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0008, t0 + dur);
+  o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + dur + .02);
+}
+let skidCd = 0;
+const SFX = {
+  crash(){ tone(180, 40, .35, 'sawtooth', .2); tone(90, 30, .5, 'square', .12, .05); },
+  honk(){ tone(300, 300, .18, 'square', .1); tone(300, 300, .18, 'square', .1, .22); },
+  check(){ tone(660, 660, .08, 'triangle', .15); tone(880, 880, .2, 'triangle', .15, .09); },
+  turbo(){ tone(200, 900, .35, 'sawtooth', .12); },
+  click(){ tone(1200, 900, .04, 'square', .05); },
+  jump(){ tone(500, 1100, .18, 'triangle', .09); },
+  land(){ tone(140, 60, .12, 'square', .14); },
+  skid(){ if (skidCd > 0) return; skidCd = .16; tone(620, 260, .13, 'sawtooth', .045); },
+  sting(){ tone(520, 780, .12, 'triangle', .08); tone(780, 1040, .16, 'triangle', .07, .1); },
+};
+/* motor: drone continuo generado por WebAudio (dos osciladores desafinados + filtro), sube de tono y volumen con la velocidad */
+/* motor tipo "camioneta" (Bronco): fundamental grave + sub-bajo + distorsión suave para dar cuerpo,
+   y un "lope" (tironeo) al ralentí que se apaga al acelerar, como un V8 real. */
+const ENGINE = (() => {
+  let osc1=null, osc2=null, sub=null, lfo=null, lfoGain=null, gain=null, gain2=null, subGain=null, filter=null, shaper=null, running=false;
+  function growlCurve(amount){
+    const n = 256, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++){ const x = i / (n - 1) * 2 - 1; curve[i] = Math.tanh(x * amount) / Math.tanh(amount); }
+    return curve;
+  }
+  function ensure(){
+    if (osc1 || !actx) return;
+    gain = actx.createGain(); gain.gain.value = 0;
+    shaper = actx.createWaveShaper(); shaper.curve = growlCurve(3.2); shaper.oversample = '2x';
+    filter = actx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 380;
+    gain2 = actx.createGain(); gain2.gain.value = .55;
+    subGain = actx.createGain(); subGain.gain.value = .6;
+    osc1 = actx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.value = 36;
+    osc2 = actx.createOscillator(); osc2.type = 'sawtooth'; osc2.frequency.value = 71.5; // ligeramente desafinado, no octava justa: da "cuerpo" en vez de sonar hueco
+    sub = actx.createOscillator(); sub.type = 'sine'; sub.frequency.value = 18;
+    lfo = actx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 13; // tironeo de ralentí
+    lfoGain = actx.createGain(); lfoGain.gain.value = 0;
+    osc1.connect(shaper); osc2.connect(gain2).connect(shaper); shaper.connect(filter);
+    sub.connect(subGain).connect(filter); filter.connect(gain).connect(actx.destination);
+    lfo.connect(lfoGain).connect(gain.gain);
+    osc1.start(); osc2.start(); sub.start(); lfo.start();
+  }
+  return {
+    start(){ ensure(); running = true; },
+    stop(){ running = false; if (gain) gain.gain.setTargetAtTime(0, actx.currentTime, .12); },
+    update(speedPct, offroad){
+      if (!running || muted || !actx){ if (gain) gain.gain.setTargetAtTime(0, actx.currentTime, .12); return; }
+      ensure();
+      const t = actx.currentTime, f = 34 + speedPct * 118;
+      osc1.frequency.setTargetAtTime(f, t, .07); osc2.frequency.setTargetAtTime(f * 1.97, t, .07);
+      sub.frequency.setTargetAtTime(f * .5, t, .07);
+      filter.frequency.setTargetAtTime(280 + speedPct * 1900, t, .06);
+      const baseVol = .07 + speedPct * .1 + (offroad ? .035 : 0);
+      gain.gain.setTargetAtTime(baseVol, t, .08);
+      // el tironeo de ralentí se nota a baja vueltas y se aplana al acelerar (motor real: lope solo al mínimo)
+      lfoGain.gain.setTargetAtTime(Math.max(0, .05 - speedPct * .05) * baseVol * 6, t, .1);
+    },
+  };
+})();
+/* voz real del capítulo (recortada con ffmpeg de assets/audio/cleto_y_flauta_cap2.wav): solo se conserva esta línea.
+   El resto de las frases usa un "sting" generado con WebAudio en vez de audios grabados, que sonaban mal. */
+const VOICES = {
+  musicatranquila: { who:'Cleto', txt:'…voy a poner música tranquila.', synth:true },
+  cuidadosenora:   { who:'Cleto', txt:'¡Cuidado, señora!', file:'cuidadosenora' },
+  cuidamecoche:    { who:'Abuela', txt:'Nene, cuidame el coche, por favor.', synth:true },
+};
+const voiceEls = {};
+for (const k of Object.keys(VOICES)) { const v = VOICES[k]; if (v.file) { const a = new Audio('audio/cap2/' + v.file + '.mp3'); a.preload = 'auto'; voiceEls[k] = a; } }
+let curVoice = null, subTimer = 0;
+function voice(k){
+  const v = VOICES[k], el = voiceEls[k];
+  if (curVoice && curVoice !== el) { curVoice.pause(); curVoice.currentTime = 0; }
+  curVoice = el || null;
+  if (el) { if (!muted) { el.currentTime = 0; el.play().catch(()=>{}); } }
+  else SFX.sting();
+  const sub = $('#sub'); sub.innerHTML = `<em>${v.who}:</em>`; sub.appendChild(document.createTextNode(v.txt)); sub.hidden = false;
+  clearTimeout(subTimer); subTimer = setTimeout(() => sub.hidden = true, 1300 + v.txt.length * 55);
+}
+function toast(msg, ms = 1800){
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, ms);
+}
+
+/* radio: 3 estaciones generadas por WebAudio, mismo motor de step-sequencer que cleto3d.html */
+const RADIO_NAMES = ['Reggae', 'House', 'Cumbia'];
+const RADIO = (() => {
+  let on = false, station = 0, step = 0, next = 0, timer = null, master = null, noise = null;
+  const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+  function note(m, t, dur, type, vol){
+    const o = actx.createOscillator(), g = actx.createGain(); o.type = type; o.frequency.value = hz(m);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0006, t + dur);
+    o.connect(g).connect(master); o.start(t); o.stop(t + dur + .02);
+  }
+  function hat(t, vol){
+    const s = actx.createBufferSource(), g = actx.createGain(), f = actx.createBiquadFilter();
+    s.buffer = noise; f.type = 'highpass'; f.frequency.value = 6500;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0006, t + .05);
+    s.connect(f).connect(g).connect(master); s.start(t); s.stop(t + .06);
+  }
+  function kick(t, punch){
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.setValueAtTime(punch ? 170 : 140, t); o.frequency.exponentialRampToValueAtTime(45, t + .11);
+    g.gain.setValueAtTime(.32, t); g.gain.exponentialRampToValueAtTime(.001, t + .14);
+    o.connect(g).connect(master); o.start(t); o.stop(t + .15);
+  }
+  // instrumentos extra para diferenciar bien los 3 géneros
+  function skank(t, root, vol){ for (const iv of [0, 4, 7]) note(root + iv, t, .1, 'square', vol); }   // acorde corto del "upstroke" reggae
+  function subBass(t, m, dur, vol){
+    const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.value = hz(m - 12);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0005, t + dur);
+    o.connect(g).connect(master); o.start(t); o.stop(t + dur + .02);
+  }
+  function guacharaca(t, vol){   // güiro/guacharaca: ráfaga corta de ruido filtrada, típica de la cumbia
+    const s = actx.createBufferSource(), g = actx.createGain(), f = actx.createBiquadFilter();
+    s.buffer = noise; f.type = 'bandpass'; f.frequency.value = 3400; f.Q.value = 5;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0006, t + .04);
+    s.connect(f).connect(g).connect(master); s.start(t); s.stop(t + .05);
+  }
+  function reed(t, m, dur, vol){   // par de osciladores desafinados = timbre "acordeón" para la melodía de cumbia
+    for (const det of [-5, 5]){
+      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sawtooth';
+      o.frequency.value = hz(m) * Math.pow(2, det / 1200);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0006, t + dur);
+      o.connect(g).connect(master); o.start(t); o.stop(t + dur + .02);
+    }
+  }
+  const REGGAE_ROOT = [40, 40, 38, 43], HOUSE_ROOT = [48, 48, 45, 45], CUMBIA_ROOT = [45, 45, 50, 50];
+  const CUMBIA_LEAD = [69, 0, 72, 69, 0, 72, 0, 69, 71, 0, 74, 71, 0, 74, 0, 71];
+  const HOUSE_LEAD  = [76, 0, 0, 76, 0, 0, 79, 0, 76, 0, 0, 76, 0, 0, 74, 0];
+  function tickReggae(i, bar, t, ST){
+    // "one drop": el bombo y el bajo caen juntos en el tercer tiempo, con el acorde picado en los offbeats
+    if (i === 8) { kick(t); subBass(t, REGGAE_ROOT[bar], ST * 5, .3); }
+    if (i === 4 || i === 12) skank(t, REGGAE_ROOT[bar] + 12, .045);
+    if (i % 8 === 6) hat(t, .018);
+  }
+  function tickHouse(i, bar, t, ST){
+    if (i % 4 === 0) kick(t, true);
+    if (i % 2 === 0) hat(t, i % 8 === 0 ? .05 : .024);
+    if (i % 4 === 0) note(HOUSE_ROOT[bar], t, ST * 3, 'triangle', .14);
+    const m = HOUSE_LEAD[i]; if (m) note(m, t, ST * 1.4, 'square', .05);
+  }
+  function tickCumbia(i, bar, t, ST){
+    guacharaca(t, i % 2 === 0 ? .045 : .022);
+    if (i === 0 || i === 8) subBass(t, CUMBIA_ROOT[bar], ST * 3, .26);
+    if (i === 4 || i === 12) note(CUMBIA_ROOT[bar] + 7, t, ST * 2, 'triangle', .1);
+    const m = CUMBIA_LEAD[i]; if (m) reed(t, m, ST * 1.5, .045);
+  }
+  const BPM = [76, 127, 97], TICKERS = [tickReggae, tickHouse, tickCumbia];
+  function tick(){
+    const bpm = BPM[station], ST = 60 / bpm / 4;
+    while (next < actx.currentTime + .12){
+      const i = step % 16, bar = Math.floor(i / 4);
+      TICKERS[station](i, bar, next, ST);
+      next += ST; step++;
+    }
+    timer = setTimeout(tick, 40);
+  }
+  return {
+    setStation(n){ station = ((n % 3) + 3) % 3; step = 0; },
+    station(){ return station; },
+    start(){
+      if (!actx || on) return;
+      if (!master){
+        master = actx.createGain(); master.connect(actx.destination);
+        noise = actx.createBuffer(1, Math.floor(actx.sampleRate * .1), actx.sampleRate);
+        const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      master.gain.value = muted ? 0 : .5;
+      on = true; next = actx.currentTime + .05; step = 0; tick();
+    },
+    stop(){ on = false; clearTimeout(timer); },
+    mute(v){ if (master) master.gain.value = v ? 0 : .5; },
+  };
+})();
+
+/* ---------------- sprites dibujados a mano ---------------- */
+// auto azul de Cleto, visto de atrás (referencia: frames/cleto_y_flauta_cap2)
+function carBackCanvas(){
+  return paintCanvas(220, 170, (x) => {
+    ink(x, 6);
+    // ruedas traseras: llanta con rayos, más parecida a la del auto real
+    for (const wx of [38, 182]){
+      const tire = x.createRadialGradient(wx-6, 118, 2, wx, 128, 26); tire.addColorStop(0, '#3a3a3a'); tire.addColorStop(1, '#0c0c0c');
+      x.fillStyle = tire; x.beginPath(); x.ellipse(wx, 128, 21, 25, 0, 0, 7); x.fill(); x.stroke();
+      const rim = x.createRadialGradient(wx-3, 124, 1, wx, 128, 13); rim.addColorStop(0, '#d4d8db'); rim.addColorStop(1, '#7d8388');
+      x.fillStyle = rim; x.beginPath(); x.ellipse(wx, 128, 11, 13, 0, 0, 7); x.fill(); x.stroke();
+      // los rayos de la llanta NO se dibujan acá (quedan estáticos): se dibujan por encima en cada frame
+      // de render(), rotando según la distancia recorrida, para que las ruedas giren de verdad al andar.
+      ink(x, 6);
+    }
+    // paragolpes gris/plateado
+    const bump = x.createLinearGradient(20, 112, 20, 142); bump.addColorStop(0, '#e4e7e9'); bump.addColorStop(1, '#9ba1a5');
+    x.fillStyle = bump;
+    rr(x, 20, 112, 180, 30, 8); x.fill(); x.stroke();
+    // zócalo gris oscuro (rocker panel), como en la referencia del cap. 2
+    x.fillStyle = '#8a9096';
+    rr(x, 26, 100, 168, 16, 5); x.fill(); x.stroke();
+    // carrocería azul: guardabarros anchos + línea de cintura marcada + techo angosto (cupé deportivo,
+    // no un óvalo/burbuja tipo "jellybean" como quedaba antes), con degradé para que no se vea "de Paint"
+    const body = x.createLinearGradient(8, 15, 212, 104);
+    body.addColorStop(0, '#3d8bff'); body.addColorStop(.45, PAL.azul); body.addColorStop(1, '#0348b8');
+    x.fillStyle = body;
+    x.beginPath();
+    x.moveTo(28, 104);
+    x.quadraticCurveTo(8, 92, 14, 74);   // guardabarro trasero izquierdo, bien ancho sobre la rueda
+    x.quadraticCurveTo(18, 58, 40, 52);  // se pincha hacia adentro: línea de cintura
+    x.quadraticCurveTo(46, 30, 74, 20);  // de la cintura sube al parabrisas/techo
+    x.quadraticCurveTo(92, 15, 110, 15);
+    x.quadraticCurveTo(128, 15, 146, 20);
+    x.quadraticCurveTo(174, 30, 180, 52);
+    x.quadraticCurveTo(202, 58, 206, 74); // guardabarro derecho
+    x.quadraticCurveTo(212, 92, 192, 104);
+    x.quadraticCurveTo(110, 116, 28, 104);
+    x.closePath(); x.fill(); x.stroke();
+    // línea de cintura: marca el quiebre entre guardabarros y techo, refuerza que no es un óvalo liso
+    x.strokeStyle = 'rgba(0,0,0,.28)'; x.lineWidth = 2.5;
+    x.beginPath(); x.moveTo(16, 73); x.quadraticCurveTo(20, 57, 41, 51); x.stroke();
+    x.beginPath(); x.moveTo(204, 73); x.quadraticCurveTo(200, 57, 179, 51); x.stroke();
+    x.fillStyle = 'rgba(255,255,255,.3)';
+    x.beginPath(); x.ellipse(66, 38, 26, 10, -.35, 0, 7); x.fill();
+    // rendijas del techo (se asoman arriba, como en la referencia)
+    x.strokeStyle = 'rgba(0,0,0,.3)'; x.lineWidth = 2.5;
+    for (const sx2 of [78, 92, 106, 120, 134]){ x.beginPath(); x.moveTo(sx2, 22); x.lineTo(sx2-3, 32); x.stroke(); }
+    ink(x, 6);
+    // luneta trasera negra con la nuca de Cleto
+    x.fillStyle = '#0c0c0c';
+    x.beginPath(); x.moveTo(56, 56); x.quadraticCurveTo(62, 32, 110, 28); x.quadraticCurveTo(158, 32, 164, 56);
+    x.quadraticCurveTo(110, 68, 56, 56); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = '#fefefc'; ink(x, 3);
+    x.beginPath(); x.arc(110, 50, 17, Math.PI, 0); x.fill(); x.stroke();
+    for (const sd of [-1, 1]){ x.beginPath(); x.ellipse(110 + sd * 17, 52, 3.5, 5, 0, 0, 7); x.fill(); x.stroke(); }
+    // luces traseras apagadas (rojo oscuro/mate); se prenden fuerte con drawBrakeGlow cuando frenás
+    ink(x, 4); x.fillStyle = '#5a2222';
+    rr(x, 32, 100, 22, 12, 4); x.fill(); x.stroke();
+    rr(x, 166, 100, 22, 12, 4); x.fill(); x.stroke();
+    // patente
+    x.fillStyle = '#fefefc'; rr(x, 92, 112, 36, 14, 2); x.fill(); ink(x,2); x.strokeRect(92,112,36,14);
+  });
+}
+function drawBrakeGlow(x, w, h, on){
+  if (!on) return;
+  x.save();
+  for (const cx of [w*.2, w*.8]){
+    const cy = h*.635, glow = x.createRadialGradient(cx, cy, 1, cx, cy, w*.14);
+    glow.addColorStop(0, 'rgba(255,60,40,.95)'); glow.addColorStop(1, 'rgba(255,60,40,0)');
+    x.fillStyle = glow; x.beginPath(); x.arc(cx, cy, w*.14, 0, 7); x.fill();
+  }
+  x.fillStyle = '#ff4020';
+  rr(x, w*.155, h*.6, w*.1, h*.075, 3); x.fill();
+  rr(x, w*.745, h*.6, w*.1, h*.075, 3); x.fill();
+  x.fillStyle = '#ffe8b0';
+  rr(x, w*.185, h*.615, w*.045, h*.045, 2); x.fill();
+  rr(x, w*.775, h*.615, w*.045, h*.045, 2); x.fill();
+  x.restore();
+}
+// mamá saludando desde la puerta (silueta simple, cameo del arranque)
+function mamaWaveCanvas(){
+  return paintCanvas(90, 170, (x) => {
+    ink(x, 5); x.fillStyle = '#f69a2a';
+    x.beginPath(); x.arc(45, 26, 20, 0, 7); x.fill(); x.stroke();
+    x.fillStyle = '#8a8a8a'; x.beginPath(); x.ellipse(45, 12, 18, 10, 0, Math.PI, 0); x.fill();
+    x.fillStyle = '#0466ef';
+    rr(x, 16, 44, 58, 100, 12); x.fill(); x.stroke();
+    x.strokeStyle = INK; x.lineWidth = 6; x.beginPath(); x.moveTo(68, 60); x.quadraticCurveTo(84, 44, 80, 30); x.stroke();
+    x.fillStyle = '#f69a2a'; x.beginPath(); x.arc(80, 28, 8, 0, 7); x.fill(); x.stroke();
+  });
+}
+// abuela con tapado verde, cruzando (referencia frame_0033: pelo castaño rulos, tapado verde azulado, cartera gris)
+function abuelaCanvas(step){
+  return paintCanvas(70, 140, (x) => {
+    const lean = step ? 4 : -4;
+    ink(x, 4);
+    // sombra de contacto propia, para que no "flote" al pegarla sobre el fondo dibujado en canvas aparte
+    x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(35, 134, 19, 5, 0, 0, 7); x.fill();
+    const coat = x.createLinearGradient(16, 40, 54, 120);
+    coat.addColorStop(0, '#2bab7e'); coat.addColorStop(.55, '#1f8f6a'); coat.addColorStop(1, '#146650');
+    x.fillStyle = coat; ink(x, 4);
+    x.beginPath(); x.moveTo(16+lean, 116); x.lineTo(20, 46); x.quadraticCurveTo(35, 36, 50, 46); x.lineTo(54-lean, 116);
+    x.quadraticCurveTo(35, 124, 16+lean, 116); x.closePath(); x.fill(); x.stroke();
+    x.strokeStyle = 'rgba(0,0,0,.22)'; x.lineWidth = 2.5; x.beginPath(); x.moveTo(35, 40); x.lineTo(35, 118); x.stroke();
+    x.fillStyle = 'rgba(255,255,255,.2)'; x.beginPath(); x.ellipse(24, 66, 6, 24, -.15, 0, 7); x.fill();
+    ink(x, 4);
+    const skin = x.createRadialGradient(38, 24, 3, 35+lean*.2, 30, 20);
+    skin.addColorStop(0, '#ffe0bb'); skin.addColorStop(1, '#e6b285');
+    const hair = x.createLinearGradient(20, 12, 50, 40); hair.addColorStop(0, '#54402a'); hair.addColorStop(1, '#2c2014');
+    x.fillStyle = hair;
+    x.beginPath(); x.arc(35 + lean*.2, 26, 15, 3.6, 6.5); x.fill(); x.stroke();
+    x.fillStyle = skin; x.beginPath(); x.ellipse(35+lean*.2, 30, 13, 14, 0, 0, 7); x.fill(); x.stroke();
+    x.fillStyle = 'rgba(214,120,110,.35)'; x.beginPath(); x.ellipse(28+lean*.2, 34, 3.4, 2.3, 0, 0, 7); x.fill();
+    x.beginPath(); x.ellipse(42+lean*.2, 34, 3.4, 2.3, 0, 0, 7); x.fill();
+    const bag = x.createLinearGradient(40-lean*.5, 74, 60-lean*.5, 96); bag.addColorStop(0, '#aeb2b5'); bag.addColorStop(1, '#77797b');
+    x.fillStyle = bag; ink(x, 3.5); rr(x, 40-lean*.5, 74, 20, 22, 5); x.fill(); x.stroke();
+    x.strokeStyle = '#4a4a4a'; x.lineWidth = 2.5; x.beginPath(); x.moveTo(42-lean*.5, 74); x.quadraticCurveTo(50-lean*.5, 60, 58-lean*.5, 72); x.stroke();
+    ink(x, 4); x.fillStyle = '#2e2e2e';
+    for (const sd of [-1,1]) { x.beginPath(); x.ellipse(35+sd*12+lean*sd*.3, 128, 8, 9, 0, 0, 7); x.fill(); x.stroke(); }
+  });
+}
+
+/* ---------------- motor pseudo-3D estilo Out Run ---------------- */
+const W = 640, H = 360;
+const ROAD = { W: 2000, SEG_LEN: 200, RUMBLE: 3, LANES: 3 };
+// HEIGHT más alto = cámara más "de arriba"; FOV más ancho compensa para que la zona muerta justo
+// delante del auto (proporcional a HEIGHT × DEPTH, con DEPTH = 1/tan(FOV/2)) no crezca y esconda
+// el decorado/obstáculos cercanos (con FOV angosto quedaban invisibles hasta ~9 segmentos de distancia).
+const CAM = { HEIGHT: 1400, FOV: 115, DRAW_DIST: 300 };
+CAM.DEPTH = 1 / Math.tan((CAM.FOV / 2) * Math.PI / 180);
+
+function easeIn(a, b, p){ return a + (b - a) * Math.pow(p, 2); }
+function easeOut(a, b, p){ return a + (b - a) * (1 - Math.pow(1 - p, 2)); }
+function easeInOut(a, b, p){ return a + (b - a) * ((-Math.cos(p * Math.PI) / 2) + .5); }
+
+let segments = [], trackLen = 0, currentTerrain = 'asphalt';
+function lastY(){ return segments.length === 0 ? 0 : segments[segments.length - 1].p2.world.y; }
+function addSegment(curve, y, deco){
+  const n = segments.length;
+  segments.push({
+    index: n,
+    p1: { world:{ x:0, y:lastY(), z: n * ROAD.SEG_LEN }, camera:{}, screen:{} },
+    p2: { world:{ x:0, y, z: (n + 1) * ROAD.SEG_LEN }, camera:{}, screen:{} },
+    curve,
+    terrain: currentTerrain,
+    dark: Math.floor(n / ROAD.RUMBLE) % 2 === 1,
+    sprites: deco ? [deco] : [],
+    cars: [],
+  });
+}
+// corre fn() con las piezas de ruta que agregue marcadas como terreno de tierra (menos agarre, otros
+// colores): así un tramo puede "cambiar de terreno" sin tocar addStraight/addCurve/etc.
+function withTerrain(name, fn){ const prev = currentTerrain; currentTerrain = name; fn(); currentTerrain = prev; }
+function addRoad(enter, hold, leave, curve, y){
+  const startY = lastY(), endY = startY + (y || 0) * ROAD.SEG_LEN, total = enter + hold + leave;
+  for (let i = 0; i < enter; i++) addSegment(easeIn(0, curve, i / enter), easeInOut(startY, endY, i / total));
+  for (let i = 0; i < hold; i++) addSegment(curve, easeInOut(startY, endY, (enter + i) / total));
+  for (let i = 0; i < leave; i++) addSegment(easeIn(curve, 0, i / leave), easeInOut(startY, endY, (enter + hold + i) / total));
+}
+function addStraight(n){ addRoad(n, 0, 0, 0, 0); }
+function addCurve(n, curve, y){ addRoad(n, 0, 0, curve, y || 0); }
+function addSCurve(n, curve){ const h = Math.floor(n/2); addRoad(h,0,0,curve,0); addRoad(n-h,0,0,-curve,0); }
+function addHill(n, y){ addRoad(n, 0, 0, 0, y); }
+
+function decoAt(index, side, kind, offset, opts){
+  if (!segments[index]) return;
+  segments[index].sprites.push(Object.assign({ side, kind, offset: offset || 1.1 }, opts));
+}
+function obstacleAt(index, side, kind, offset, hitW){
+  // side=0 quedaba invisible (drawDeco escala x*side) y colapsaba la colisión en x=0: derivamos el lado del signo del offset.
+  // ojo con el default: el hitW tiene que quedar cerca del ancho VISUAL real del sprite (ver bacheAt/nota
+  // más abajo) — .32 era ~3.5x más ancho que el cono dibujado, por eso se sentía "esquivo bien y choco igual".
+  const off = offset || 0, finalSide = side || (off < 0 ? -1 : 1);
+  decoAt(index, finalSide, kind, Math.abs(off), { hazard:true, hitW: hitW || .16 });
+}
+function bacheAt(index, side, offset){
+  // pozo/bache: mismo sistema de colisión que un cono, pero "soft" -> sacudón corto en vez de choque completo.
+  // hitW bajado de .34 a .18: a esa escala visual (el bache dibujado mide ~20 unidades locales de mitad-ancho,
+  // que en pantalla equivale a ~0.1 de playerX) .34 era mucho más ancho que la mancha que se ve en el piso,
+  // así que se podía chocar con algo que visualmente ya habías esquivado.
+  const off = offset || 0, finalSide = side || (off < 0 ? -1 : 1);
+  decoAt(index, finalSide, 'bache', Math.abs(off), { hazard:true, soft:true, hitW: .18 });
+}
+function perroAt(index, side, offset){
+  // perro que cruza: mismo mecanismo que la abuela (esquivar de cerca puntúa), pero un desafío distinto
+  // visualmente y más rápido/errático.
+  decoAt(index, side, 'perro', offset || 0, { abuela:true, hitW:.3, perro:true });
+}
+function abuelaAt(index, side, offset){
+  decoAt(index, side, 'abuela', offset || 0, { abuela:true, hitW:.36 });
+}
+function fuelAt(index, side, offset){
+  // tubo de combustible: se recoge pasando cerca (no es un hazard, no rompe el auto si lo tocás).
+  decoAt(index, side, 'fuel', offset || 0, { fuelPickup:true, hitW:.6 });
+}
+function checkpointAt(index){
+  decoAt(index, -1, 'checkpoint', 1.02); decoAt(index, 1, 'checkpoint', 1.02);
+  checkpoints.push(index);
+}
+function jumpAt(index){
+  // lomo de burro: salto real si venís a buena velocidad (canon del diseño), con cartel a los costados.
+  if (!segments[index]) return;
+  segments[index].jump = true;
+  decoAt(index, -1, 'rampa', 1.05); decoAt(index, 1, 'rampa', 1.05);
+}
+function trafficAt(startIndex, x, speedMul, kind, opts){
+  // auto de tráfico que avanza solo por la ruta (no fijo como el resto del decorado): esto es lo que
+  // te "cruza" en el camino. swerveTo hace que, cuando te acercás, se cambie de carril para forzar la esquiva.
+  traffic.push(Object.assign({
+    z: startIndex * ROAD.SEG_LEN, x, speed: MAX_SPEED * speedMul, kind, hitW: .26, hit: false, swerved: false, swerveT: 0, // bajado de .36: la carrocería dibujada del auto de tráfico corresponde a ~0.22-0.24
+  }, opts));
+}
+
+let checkpoints = [], traffic = [];
+function buildStage1(){
+  // etapa estirada 3x (mismo trazado/densidad de decorado que el original, solo más largo) para que
+  // dure lo pensado en el diseño en vez de terminarse en ~7s a velocidad máxima.
+  segments = []; checkpoints = []; traffic = [];
+  addStraight(60);
+  const HOUSES = ['casa', 'casa2', 'casa3'];
+  for (let i = 2; i < 60; i += 3) decoAt(i, i % 6 ? 1 : -1, HOUSES[(i / 3) % 3 | 0]);
+  addCurve(120, 1.1, 0); // primera curva de la etapa tutorial: más suave que el resto para no perder al que recién arranca
+  for (let i = 60; i < 180; i += 3){ decoAt(i, -1, i % 12 < 6 ? 'arbol' : 'arbol2'); if (i % 9 === 2) decoAt(i, 1, 'cerco'); }
+  obstacleAt(102, 0, 'cono', .55, .15); obstacleAt(105, 0, 'cono', .35, .15);
+  fuelAt(150, -1, .35);
+  addStraight(45);
+  // el segundo par de conos quedaba DENTRO de la curva (addCurve arriba), y la fuerza centrífuga
+  // (playerX -= curve * speedPct^2 en updateCar) empuja al auto hacia la izquierda ahí mismo, justo
+  // hacia el cono de offset negativo: un jugador que solo intenta ir al centro termina chocando casi
+  // seguro (confirmado con 3 de 4 corridas de prueba). Se movieron a la recta después de la curva,
+  // donde siguen siendo un obstáculo real para esquivar pero sin ese empuje físico en contra.
+  obstacleAt(183, 0, 'cono', -.4, .15); obstacleAt(187, 0, 'cono', -.2, .15);
+  decoAt(174, 1, 'mamaSaluda', 1.4);
+  checkpointAt(192);
+  abuelaAt(210, -1, .55);
+  // era curve=-3 (la misma intensidad que la curva más difícil, al FINAL del recorrido) pero esta es
+  // recién la segunda curva de un tramo pensado como tutorial, y encima combinada con una loma (y=.6):
+  // ahí es donde el manejo se sentía "imposible" (confirmado con pruebas: es donde más se pierde el control).
+  addCurve(150, -2, .6);
+  for (let i = 180; i < 330; i += 3){ decoAt(i, i % 8 ? 1 : -1, HOUSES[(i / 3) % 3 | 0]); if (i % 11 === 3) decoAt(i, -1, 'cerco'); }
+  trafficAt(258, -.5, .55, 'auto_viejo');
+  // curve=-3 en este tramo empuja playerX hacia positivo; offset negativo = del lado contrario (seguro).
+  obstacleAt(270, 0, 'cono', -.35, .15); obstacleAt(273, 0, 'cono', -.15, .15);
+  decoAt(285, -1, 'colectivo', 1.5);
+  abuelaAt(300, 1, .5);
+  addHill(90, 1.2);
+  for (let i = 330; i < 420; i += 3) decoAt(i, i % 6 ? -1 : 1, i % 12 < 6 ? 'arbol2' : 'arbol');
+  checkpointAt(384);
+  abuelaAt(402, 1, .5);
+  obstacleAt(420, 0, 'cono', .4, .15);
+  jumpAt(415);
+  trafficAt(430, .5, .5, 'auto_r', { swerve:true, swerveTarget:-.2, swerveDur:1.3 });
+  fuelAt(460, 1, .32);
+  addStraight(60);
+  addSCurve(180, 2.6);
+  for (let i = 450; i < 630; i += 3){ decoAt(i, -1, i % 12 < 6 ? 'arbol' : 'arbol2'); if (i % 8 === 1) decoAt(i, 1, 'cerco'); }
+  // 534 y 552 caen en la primera mitad de la S-curve (curve=+2.6: empuja playerX hacia negativo);
+  // con offset negativo quedaban en la misma trampa que 140/143 (choque casi automático al ir al centro).
+  // Mismo criterio que 102/105: el offset va del lado contrario al empuje de la curva.
+  obstacleAt(516, 0, 'cono', -.3, .15); obstacleAt(534, 0, 'cono', .35, .15); obstacleAt(552, 0, 'cono', .4, .15);
+  abuelaAt(594, -1, .5);
+  trafficAt(560, -.5, .48, 'auto_g');
+  obstacleAt(660, 0, 'cono', -.4, .15); // curve=-2.6 acá empuja hacia positivo; offset negativo, del lado seguro
+  trafficAt(760, -.5, .5, 'auto_g');
+  addHill(90, -1.2);
+  checkpointAt(645);
+  jumpAt(745);
+  abuelaAt(750, -1, .55);
+  addStraight(90);
+  for (let i = 654; i < 744; i += 3) decoAt(i, i % 6 ? 1 : -1, i % 8 === 0 ? 'arbol2' : i % 4 ? HOUSES[(i / 3) % 3 | 0] : 'arbol');
+  trafficAt(700, .55, .5, 'auto_viejo', { swerve:true, swerveTarget:-.25, swerveDur:1.1 });
+  fuelAt(820, -1, .35);
+  checkpointAt(850);
+  trafficAt(840, -.55, .52, 'auto_r');
+  addCurve(120, 3, 0);
+  obstacleAt(950, 0, 'cono', .3, .15); // curve=3 en este tramo empuja hacia negativo; mismo criterio que arriba
+  trafficAt(960, .5, .58, 'auto_g', { swerve:true, swerveTarget:0, swerveDur:1 });
+  fuelAt(990, -1, .32);
+  abuelaAt(1000, 1, .5);
+  addStraight(60);
+
+  // ---- desde acá, tramo nuevo: casi triplica la duración original y suma terreno de tierra,
+  // baches (hazard "soft", distinto de chocar de lleno) y un perro para cruzar. Todo con índices
+  // relativos a `p` (capturado con segments.length justo antes de cada pieza) en vez de números
+  // fijos a mano, así no se repite el bug de las trampas de cono en curva de las veces anteriores:
+  // el signo seguro de cada obstáculo se deriva de collar el `curve` real de esa pieza. -----------
+  let p = segments.length;
+
+  // plaza del barrio: más árboles, un cruce con perro, respiro antes de la tierra
+  addStraight(90);
+  for (let i = p + 2; i < p + 90; i += 3) decoAt(i, i % 5 ? 1 : -1, i % 9 < 5 ? 'arbol' : HOUSES[(i / 3) % 3 | 0]);
+  checkpointAt(p + 30);
+  fuelAt(p + 45, -1, .35);
+  perroAt(p + 70, 1, .45);
+
+  p = segments.length;
+  addSCurve(220, 2.2); // primera mitad curve=+2.2 empuja hacia negativo (offset seguro positivo); segunda mitad al revés
+  for (let i = p; i < p + 220; i += 3) decoAt(i, i % 7 ? -1 : 1, i % 10 < 5 ? 'arbol2' : 'cerco');
+  obstacleAt(p + 30, 0, 'cono', .35, .15); obstacleAt(p + 55, 0, 'cono', .3, .15);
+  trafficAt(p + 90, -.5, .5, 'auto_r', { swerve:true, swerveTarget:.2, swerveDur:1.2 });
+  obstacleAt(p + 150, 0, 'cono', -.35, .15); obstacleAt(p + 175, 0, 'cono', -.3, .15);
+  abuelaAt(p + 200, -1, .5);
+
+  p = segments.length;
+  addHill(140, 1);
+  jumpAt(p + 60);
+  for (let i = p; i < p + 140; i += 3) decoAt(i, i % 6 ? -1 : 1, 'arbol2');
+  checkpointAt(p + 120);
+  trafficAt(p + 100, .5, .5, 'auto_g');
+
+  // entra a la calle de tierra: terreno nuevo (menos agarre, colores propios) con baches en vez de conos.
+  p = segments.length;
+  withTerrain('dirt', () => addStraight(140));
+  for (let i = p + 2; i < p + 140; i += 4) decoAt(i, -1, 'cerco');
+  bacheAt(p + 25, 0, .25); bacheAt(p + 55, 0, -.3); bacheAt(p + 90, 0, .3);
+  trafficAt(p + 70, .5, .38, 'auto_viejo'); // más lento: el terreno también los frena a ellos
+  fuelAt(p + 115, 1, .3);
+
+  p = segments.length;
+  withTerrain('dirt', () => addCurve(190, -1.8, 0)); // curve negativo: empuja hacia positivo -> offset seguro negativo
+  for (let i = p; i < p + 190; i += 3) decoAt(i, 1, i % 9 < 4 ? 'arbol' : 'cerco');
+  bacheAt(p + 40, 0, -.3); bacheAt(p + 90, 0, -.35);
+  obstacleAt(p + 130, 0, 'cono', -.3, .15);
+  perroAt(p + 160, -1, .45);
+  checkpointAt(p + 170);
+
+  p = segments.length;
+  withTerrain('dirt', () => addSCurve(220, 2));
+  for (let i = p; i < p + 220; i += 3) decoAt(i, -1, 'cerco');
+  bacheAt(p + 30, 0, .3); bacheAt(p + 55, 0, .3); // primera mitad curve=+2 empuja negativo -> offset seguro positivo
+  trafficAt(p + 95, -.5, .45, 'auto_g');
+  bacheAt(p + 150, 0, -.3); bacheAt(p + 180, 0, -.3); // segunda mitad curve=-2 empuja positivo -> offset seguro negativo
+  fuelAt(p + 200, 1, .3);
+
+  // vuelve al asfalto: recta de transición antes del cierre
+  p = segments.length;
+  addStraight(80);
+  for (let i = p + 2; i < p + 80; i += 3) decoAt(i, i % 6 ? 1 : -1, HOUSES[(i / 3) % 3 | 0]);
+  checkpointAt(p + 55);
+  abuelaAt(p + 35, 1, .5);
+
+  // chicane final: dos eses seguidas para un tramo de habilidad antes del cierre
+  p = segments.length;
+  addSCurve(170, 2.4);
+  for (let i = p; i < p + 170; i += 3) decoAt(i, i % 6 ? -1 : 1, i % 11 < 5 ? 'arbol' : 'arbol2');
+  obstacleAt(p + 25, 0, 'cono', .35, .15); // primera mitad +2.4 empuja negativo -> offset seguro positivo
+  obstacleAt(p + 110, 0, 'cono', -.35, .15); // segunda mitad -2.4 empuja positivo -> offset seguro negativo
+  trafficAt(p + 140, .5, .55, 'auto_r', { swerve:true, swerveTarget:-.2, swerveDur:1 });
+
+  p = segments.length;
+  addSCurve(170, -2.4); // arranca al revés de la anterior, para variar el ritmo del zigzag
+  for (let i = p; i < p + 170; i += 3) decoAt(i, i % 6 ? 1 : -1, i % 11 < 5 ? 'arbol2' : 'arbol');
+  obstacleAt(p + 25, 0, 'cono', -.35, .15); // primera mitad -2.4 empuja positivo -> offset seguro negativo
+  obstacleAt(p + 110, 0, 'cono', .35, .15); // segunda mitad +2.4 empuja negativo -> offset seguro positivo
+  perroAt(p + 145, 1, .4);
+
+  p = segments.length;
+  addHill(170, 1.3);
+  jumpAt(p + 45); jumpAt(p + 125);
+  for (let i = p; i < p + 170; i += 3) decoAt(i, i % 5 ? -1 : 1, HOUSES[(i / 3) % 3 | 0]);
+  checkpointAt(p + 90);
+  fuelAt(p + 150, -1, .32);
+  trafficAt(p + 60, -.5, .5, 'auto_viejo', { swerve:true, swerveTarget:.25, swerveDur:1.2 });
+
+  // última curva difícil (misma intensidad que antes, pero ya con mucho recorrido de práctica encima)
+  p = segments.length;
+  addCurve(200, 3.2, -.4);
+  for (let i = p; i < p + 200; i += 3) decoAt(i, -1, i % 10 < 5 ? 'arbol' : 'cerco');
+  obstacleAt(p + 60, 0, 'cono', .35, .15); // curve positivo empuja negativo -> offset seguro positivo
+  obstacleAt(p + 130, 0, 'cono', .3, .15);
+  trafficAt(p + 100, .55, .55, 'auto_g', { swerve:true, swerveTarget:0, swerveDur:1 });
+  checkpointAt(p + 180);
+
+  // recta de cierre
+  p = segments.length;
+  addStraight(140);
+  for (let i = p + 2; i < p + 140; i += 3) decoAt(i, i % 6 ? 1 : -1, i % 4 ? HOUSES[(i / 3) % 3 | 0] : 'arbol2');
+  abuelaAt(p + 40, -1, .55);
+  fuelAt(p + 80, 1, .35);
+  decoAt(p + 115, -1, 'colectivo', 1.5);
+  addStraight(50);
+
+  trackLen = segments.length * ROAD.SEG_LEN;
+}
+
+function findSegment(z){ return segments[Math.min(segments.length - 1, Math.max(0, Math.floor(z / ROAD.SEG_LEN)))]; }
+function project(p, camX, camY, camZ, camDepth, width, height, roadW){
+  const tx = p.world.x - camX, ty = p.world.y - camY, tz = p.world.z - camZ || 1;
+  const scale = camDepth / tz;
+  p.screen.scale = scale;
+  p.screen.x = Math.round((width / 2) + (scale * tx * width / 2));
+  p.screen.y = Math.round((height / 2) - (scale * ty * height / 2));
+  p.screen.w = Math.round(scale * roadW * width / 2);
+  p.camera = { x: tx, y: ty, z: tz };
+}
+
+/* ---------------- estado del juego ---------------- */
+let canvas, ctx;
+let position = 0, playerX = 0, speed = 0, steerV = 0, carTilt = 0, airT = 0, airTotal = .6, bounceT = 0;
+const MAX_SPEED = ROAD.SEG_LEN * 40, ACCEL = MAX_SPEED * .95, BRAKE = -MAX_SPEED * 1.7, DECEL = -MAX_SPEED * .55, OFFROAD_DECEL = -MAX_SPEED * 1.5, OFFROAD_LIMIT = MAX_SPEED * .13;
+let keys = new Set(), stageDone = false, gameRunning = false;
+let carCanvas;
+let timeLeft = 60, score = 0, turboT = 0, turboCD = 0, invT = 0, crashT = 0, crashSpin = 0, abuelaDodges = 0, crashes = 0, nextCheckpoint = 0;
+let fuel = 100, fuelWarned = false;
+let bumpT = 0; // pozo/bache: sacudida corta de cámara, no un choque completo
+const FUEL_MAX = 100, FUEL_DRAIN = 100 / 32, FUEL_REFILL = 45; // tanque lleno se vacía en ~32s a fondo: fuerza a buscar tubos sin castigar a quien maneja bien y prolijo por el centro
+const fmtTime = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+function resetRun(){
+  buildStage1();
+  position = 0; playerX = 0; speed = 0; steerV = 0; carTilt = 0; airT = 0; airTotal = .6; bounceT = 0; stageDone = false; nextCheckpoint = 0;
+  timeLeft = 60; score = 0; turboT = 0; turboCD = 0; invT = 0; crashT = 0; abuelaDodges = 0; crashes = 0;
+  fuel = FUEL_MAX; fuelWarned = false;
+}
+
+function triggerCrash(){
+  if (crashT > 0 || invT > 0) return;
+  // antes eran 1.0s totalmente sin control por cada choque; con la densidad de obstáculos actual eso
+  // encadenaba choque tras choque sintiéndose como que el volante "no responde". Más corto pero todavía
+  // se lee el giro cartoon.
+  crashT = 0.55; crashSpin = (Math.random() < .5 ? -1 : 1) * (7 + Math.random() * 4);
+  speed *= .2; timeLeft = Math.max(0, timeLeft - 3); crashes++;
+  SFX.crash(); toast('¡Uh! Cleto casi sale volando (-3s)');
+}
+function triggerBump(){
+  // pozo/bache: sacudón y frenada corta, pero sin girar por el aire ni perder el control — un desafío
+  // más chico que un choque de lleno, para variar la sensación de los obstáculos.
+  bumpT = 0.35; speed *= .72; timeLeft = Math.max(0, timeLeft - 1);
+  SFX.land(); toast('¡Pozo! -1s');
+}
+function checkHazards(){
+  const segIdx = findSegment(position).index;
+  // aviso con unos segundos de anticipación (mirando más adelante) para la frase de Cleto antes de llegar a la abuela.
+  for (let n = 0; n <= 10; n++){
+    const seg = segments[segIdx + n]; if (!seg) continue;
+    for (const spr of seg.sprites) if (spr.abuela && !spr.warned){ spr.warned = true; if (spr.perro) SFX.honk(); else voice('cuidadosenora'); }
+  }
+  for (let n = 0; n <= 1; n++){
+    const seg = segments[segIdx + n]; if (!seg) continue;
+    for (const spr of seg.sprites){
+      if (spr.hazard && !spr.hit && airT <= 0 && Math.abs(playerX - spr.side * spr.offset) < spr.hitW && position > seg.index * ROAD.SEG_LEN){
+        spr.hit = true; spr.soft ? triggerBump() : triggerCrash();
+      }
+      if (spr.fuelPickup && !spr.hit && Math.abs(playerX - spr.side * spr.offset) < spr.hitW && position > seg.index * ROAD.SEG_LEN){
+        spr.hit = true; fuel = Math.min(FUEL_MAX, fuel + FUEL_REFILL); fuelWarned = fuel > 30 ? false : fuelWarned;
+        SFX.check(); toast('¡Tubo de combustible! +' + FUEL_REFILL + '%');
+      }
+      if (spr.abuela && !spr.scored && position > (seg.index + .5) * ROAD.SEG_LEN){
+        spr.scored = true;
+        const dist = Math.abs(playerX - spr.side * spr.offset);
+        // el bonus solo cuenta si esquivaste de cerca; irte del todo del camino no debería puntuar igual.
+        if (spr.perro){
+          if (dist < spr.hitW){ SFX.honk(); toast('¡El perro esquiva el auto de un salto!'); }
+          else if (dist < spr.hitW * 2.5){ abuelaDodges++; score += 150; toast('¡Esquivaste al perro! +150'); SFX.check(); }
+        } else {
+          if (dist < spr.hitW){ SFX.honk(); toast('¡La abuela salta el auto de un brinco!'); }
+          else if (dist < spr.hitW * 2.5){ abuelaDodges++; score += 200; voice('cuidamecoche'); toast('¡Esquivaste a la abuela! +200'); SFX.check(); }
+        }
+      }
+    }
+  }
+}
+function checkJumps(segment){
+  if (segment.jump && !segment.jumped && speed > MAX_SPEED * .5){
+    segment.jumped = true;
+    // sacarle jugo al turbo: si lo tenés prendido justo al pasar la rampa, el salto sale más largo/alto
+    // y de yapa te devuelve nafta — una razón concreta para guardarte el turbo para las rampas en vez de
+    // gastarlo en cualquier recta.
+    const turboBoosted = turboT > 0;
+    airTotal = turboBoosted ? 1 : .6; airT = airTotal;
+    if (turboBoosted){
+      score += 80; fuel = Math.min(FUEL_MAX, fuel + 16); fuelWarned = fuel > 30 ? false : fuelWarned;
+      toast('¡Salto con turbo! +80 y +16% nafta'); SFX.turbo();
+    } else {
+      score += 30; toast('¡Salto! +30');
+    }
+    SFX.jump();
+  }
+}
+const TRAFFIC_START_RANGE = ROAD.SEG_LEN * 22;
+function checkTraffic(dt){
+  for (const t of traffic){
+    // el auto de tráfico queda parado (no avanza) hasta que el jugador se acerca lo suficiente; si arrancara
+    // desde el segundo 0 a velocidad fija, un jugador que no va a fondo todo el tiempo nunca lo alcanza y
+    // se pierde el encuentro (y el sombreado/arte que tiene el sprite) por completo.
+    if (!t.started){ if (position > t.z - TRAFFIC_START_RANGE) t.started = true; else continue; }
+    t.z += t.speed * dt;
+    if (t.swerve && !t.swerved && position > t.z - ROAD.SEG_LEN * 16 && position < t.z){
+      t.swerved = true; t.swerveStart = t.x;
+    }
+    if (t.swerved && t.swerveT < 1){
+      t.swerveT = Math.min(1, t.swerveT + dt / (t.swerveDur || 1.1));
+      t.x = t.swerveStart + (t.swerveTarget - t.swerveStart) * ((-Math.cos(t.swerveT * Math.PI) / 2) + .5);
+    }
+    if (!t.hit && airT <= 0 && Math.abs(t.z - position) < ROAD.SEG_LEN && Math.abs(playerX - t.x) < t.hitW){
+      t.hit = true; triggerCrash(); SFX.honk();
+    }
+  }
+}
+
+function updateCar(dt){
+  if (!gameRunning || stageDone) return;
+  invT = Math.max(0, invT - dt); turboT = Math.max(0, turboT - dt); turboCD = Math.max(0, turboCD - dt);
+  skidCd = Math.max(0, skidCd - dt);
+  const wasAir = airT > 0; airT = Math.max(0, airT - dt); if (wasAir && airT === 0) SFX.land();
+  bumpT = Math.max(0, bumpT - dt);
+  timeLeft -= dt;
+  if (timeLeft <= 0){ timeLeft = 0; gameRunning = false; RADIO.stop(); ENGINE.stop(); $('#overTitle').textContent = '¡Se acabó el tiempo!'; $('#overWhere').textContent = 'la etapa 1'; show('over'); return; }
+  const segment = findSegment(position);
+  const speedPct = speed / MAX_SPEED;
+  // el tanque se gasta más rápido cuanto más a fondo vas (motor al mango), pero siempre consume algo
+  // (ralentí), así que no alcanza con ir despacio todo el viaje para nunca tener que buscar un tubo.
+  fuel = Math.max(0, fuel - FUEL_DRAIN * dt * (0.35 + 0.65 * speedPct));
+  if (fuel < 22 && !fuelWarned){ fuelWarned = true; toast('¡Queda poca nafta! Buscá un tubo'); }
+  if (fuel <= 0){ gameRunning = false; RADIO.stop(); ENGINE.stop(); $('#overTitle').textContent = '¡Te quedaste sin combustible!'; $('#overWhere').textContent = 'la etapa 1'; show('over'); return; }
+  if (crashT > 0){
+    crashT = Math.max(0, crashT - dt); if (crashT === 0) invT = 1;
+    position += dt * speed;
+    return;
+  }
+  // dirección "velocidad objetivo": el volante apunta directo a una velocidad lateral (no la va acelerando
+  // desde cero) y se acerca rápido a ese objetivo. El modelo anterior (acelerar + decaer con inercia propia)
+  // se sentía desconectado del input — apretar y soltar tardaban en notarse. Esto responde casi al toque,
+  // sin ser un salto instantáneo (sigue habiendo un suavizado, solo que mucho más corto).
+  let steerInput = 0;
+  if (keys.has('ArrowLeft') || keys.has('KeyA')) steerInput -= 1;
+  if (keys.has('ArrowRight') || keys.has('KeyD')) steerInput += 1;
+  const steerTarget = steerInput * (2.3 + speedPct * 1.6);
+  steerV += (steerTarget - steerV) * Math.min(1, 11 * dt);
+  playerX += steerV * dt;
+  // tramo de tierra: menos agarre (más empuje en las curvas y derrape) — terreno nuevo, no solo cosmético.
+  const onDirt = segment.terrain === 'dirt';
+  const gripMul = onDirt ? 1.6 : 1;
+  playerX -= dt * 1.15 * gripMul * segment.curve * speedPct * speedPct; // fuerza centrífuga en las curvas, más suave que antes
+  if (onDirt && speedPct > .3 && Math.random() < dt * 3) SFX.skid();
+  const maxSpd = turboT > 0 ? MAX_SPEED * 1.35 : MAX_SPEED;
+  if (keys.has('ArrowUp') || keys.has('KeyW')) speed += ACCEL * dt;
+  else if (keys.has('ArrowDown') || keys.has('KeyS')) speed += BRAKE * dt;
+  else speed += DECEL * dt;
+  if (keys.has('Space') && turboT <= 0 && turboCD <= 0 && speed > MAX_SPEED * .3){ turboT = 1.4; turboCD = 2.4; SFX.turbo(); }
+  const offroad = playerX < -1 || playerX > 1;
+  if (offroad && speed > OFFROAD_LIMIT) speed += OFFROAD_DECEL * dt;
+  // el "tirón" de vuelta al camino tiene que ser bastante más fuerte que antes (.3 -> 1.15): con el valor
+  // viejo, un auto que se iba del camino en una curva y no volvía a tocar el volante quedaba pegado
+  // cómodamente en la banquina, esquivando de arriba todos los obstáculos del centro sin querer. Con más
+  // tirón, vuelve a cruzar el centro (donde están los obstáculos) en vez de bordear la pista gratis.
+  if (offroad) playerX -= Math.sign(playerX) * dt * 1.15;
+  speed = Math.max(0, Math.min(maxSpd, speed));
+  playerX = Math.max(-1.6, Math.min(1.6, playerX));
+  // inclinación visual del auto: sigue al volante con resorte, da sensación de peso/agarre
+  const tiltTarget = Math.max(-1, Math.min(1, steerV / 2.6)) * .16 + segment.curve * speedPct * .1;
+  carTilt += (tiltTarget - carTilt) * Math.min(1, dt * 9);
+  bounceT += dt * (6 + speedPct * 10);
+  ENGINE.update(speedPct, offroad);
+  if (Math.abs(steerV) > 2.1 && speedPct > .35) SFX.skid();
+  position += dt * speed;
+  checkHazards();
+  checkJumps(segment);
+  checkTraffic(dt);
+  if (nextCheckpoint < checkpoints.length && segment.index >= checkpoints[nextCheckpoint]){
+    nextCheckpoint++; timeLeft += 15; score += 50; toast('¡Checkpoint! +15s'); SFX.check();
+  }
+  if (position >= trackLen){ position = trackLen - 1; if (!stageDone){ stageDone = true; speed = 0; finishRun(); } }
+}
+function finishRun(){
+  gameRunning = false; RADIO.stop(); ENGINE.stop(); turboT = 0;
+  $('#rTime').textContent = fmtTime(timeLeft);
+  $('#rScore').textContent = score;
+  $('#rPio').textContent = abuelaDodges;
+  $('#rMultas').textContent = crashes;
+  $('#resultsBody').textContent = crashes === 0 ? 'Cleto llega entero, sin un rasguño.' : 'Cleto llega dando tumbos, pero llega.';
+  hideHud();
+  show('results');
+}
+
+function drawSegmentQuad(x1, y1, w1, x2, y2, w2, color){
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x1 - w1, y1); ctx.lineTo(x2 - w2, y2); ctx.lineTo(x2 + w2, y2); ctx.lineTo(x1 + w1, y1);
+  ctx.closePath(); ctx.fill();
+}
+let cloudDrift = 0;
+function drawBackground(baseCurve){
+  cloudDrift = (cloudDrift + .13) % (W + 120);
+  // un poco más alto que el horizonte real para que una loma no la haga asomar un frame (costura fea)
+  const skyH = H * .64;
+  const sky = ctx.createLinearGradient(0, 0, 0, skyH);
+  sky.addColorStop(0, '#6ec6f2'); sky.addColorStop(1, '#bfe3ff');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, skyH);
+  // piso de pasto de respaldo: si el auto se va muy offroad, el desplazamiento de cámara puede sacar
+  // los quads de pasto por segmento fuera del ancho fijo que cubren y dejar un hueco negro; este relleno
+  // sólido de fondo asegura que siempre haya pasto debajo, pase lo que pase con la perspectiva.
+  ctx.fillStyle = PAL.verdeOsc; ctx.fillRect(0, skyH, W, H - skyH);
+  ink(ctx, 3); ctx.fillStyle = '#fff';
+  for (const [cx, cy, s] of [[80,60,26],[260,40,20],[520,70,30]]){
+    const px = ((cx - cloudDrift) % (W + 120) + (W + 120)) % (W + 120) - 60;
+    ctx.beginPath(); ctx.ellipse(px - baseCurve*40, cy, s, s*.55, 0, 0, 7); ctx.fill(); ctx.stroke();
+  }
+}
+function groundShadow(rx, ry, oy){
+  ctx.save(); ctx.globalAlpha = .3; ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(0, oy || 2, rx, ry, 0, 0, 7); ctx.fill(); ctx.restore();
+}
+function drawOldCar(x, top, mid, dark){
+  groundShadow(44, 9, 1);
+  const body = ctx.createLinearGradient(-42, -36, -42, 0);
+  body.addColorStop(0, top); body.addColorStop(1, mid);
+  ctx.fillStyle = body; ink(ctx, 3);
+  ctx.beginPath(); ctx.moveTo(-42,0); ctx.lineTo(-38,-22); ctx.quadraticCurveTo(-20,-36,10,-34); ctx.quadraticCurveTo(34,-30,40,-14);
+  ctx.lineTo(42,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath();
+  ctx.moveTo(-30,-20); ctx.quadraticCurveTo(-16,-30,8,-29); ctx.lineTo(6,-25); ctx.quadraticCurveTo(-16,-25,-28,-16); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#bfe6f5'; ink(ctx, 2);
+  ctx.beginPath(); ctx.moveTo(-16,-24); ctx.quadraticCurveTo(0,-30,18,-24); ctx.lineTo(14,-14); ctx.lineTo(-14,-14); ctx.closePath(); ctx.fill(); ctx.stroke();
+  for (const wx of [-24, 24]){
+    ctx.fillStyle = '#141414'; ctx.beginPath(); ctx.arc(wx,2,10,0,7); ctx.fill(); ink(ctx,2); ctx.stroke();
+    ctx.fillStyle = '#9aa0a4'; ctx.beginPath(); ctx.arc(wx,2,4.2,0,7); ctx.fill();
+  }
+  ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(-2,-10,44,7,0,0,Math.PI); ctx.fill();
+}
+function drawDeco(kind, x, y, scale, side){
+  ctx.save(); ctx.translate(x, y); ctx.scale(scale * side, scale);
+  if (kind === 'arbol' || kind === 'arbol2'){
+    // agrandados bastante respecto al resto del decorado: a la distancia a la que aparecen en pista, una
+    // copa chica se ve como una mancha verde sin forma; más grande, se lee como árbol antes de estar encima.
+    ctx.scale(1.7, 1.7);
+    groundShadow(26, 7, 1);
+    ctx.fillStyle = '#7a5024'; ctx.fillRect(-7, -32, 14, 36); ctx.fillStyle = '#5c3a19'; ctx.fillRect(-7,-32,6,36);
+    ink(ctx, 2); ctx.strokeRect(-7,-32,14,36);
+    // arbol2: más alto y angosto (tipo álamo/conífera), tono más oscuro/azulado, para variar la silueta
+    // de la línea de árboles en vez de repetir siempre la misma copa redonda.
+    const blobs = kind === 'arbol2'
+      ? [[-9,-52,18,PAL.verdeOsc], [9,-58,19,PAL.verdeOsc], [0,-76,20,'#0a7a3d']]
+      : [[-14,-46,24,PAL.verdeOsc], [16,-50,26,PAL.verdeOsc], [2,-64,27,PAL.verde]];
+    for (const [ox, oy, r, tone] of blobs){
+      const g = ctx.createRadialGradient(ox-8, oy-10, 2, ox, oy, r*1.3);
+      g.addColorStop(0, tone === PAL.verde ? '#5fd166' : tone === '#0a7a3d' ? '#2fae6c' : '#2fa233'); g.addColorStop(1, tone);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ox, oy, r, 0, 7); ctx.fill(); ink(ctx, 2.4); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.beginPath(); ctx.arc(-6, kind === 'arbol2' ? -80 : -68, 10, 0, 7); ctx.fill();
+  } else if (kind === 'casa'){
+    groundShadow(52, 8, 1);
+    const wall = ctx.createLinearGradient(-40,-60,40,0); wall.addColorStop(0,'#fff3c4'); wall.addColorStop(1,'#e8c86e');
+    ctx.fillStyle = wall; ctx.fillRect(-40,-60,80,60); ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.strokeRect(-40,-60,80,60);
+    const roof = ctx.createLinearGradient(0,-92,0,-60); roof.addColorStop(0,'#ef4a3f'); roof.addColorStop(1,PAL.rojo);
+    ctx.fillStyle = roof; ctx.beginPath(); ctx.moveTo(-46,-60); ctx.lineTo(0,-92); ctx.lineTo(46,-60); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0,-92); ctx.lineTo(0,-60); ctx.stroke();
+    ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    for (const wx of [-24, 6]){
+      const win = ctx.createLinearGradient(wx,-44,wx,-24); win.addColorStop(0,'#bfeaf9'); win.addColorStop(1,PAL.celeste);
+      ctx.fillStyle = win; ctx.fillRect(wx,-44,20,20); ctx.strokeRect(wx,-44,20,20);
+      ctx.beginPath(); ctx.moveTo(wx+10,-44); ctx.lineTo(wx+10,-24); ctx.moveTo(wx,-34); ctx.lineTo(wx+20,-34); ctx.stroke();
+    }
+    ctx.fillStyle = '#8a5a2b'; ctx.fillRect(-8,-22,16,22); ctx.strokeRect(-8,-22,16,22);
+  } else if (kind === 'casa2'){
+    groundShadow(56, 8, 1);
+    const wall = ctx.createLinearGradient(-44,-54,44,0); wall.addColorStop(0,'#eef8fc'); wall.addColorStop(1,'#bfe1ec');
+    ctx.fillStyle = wall; ctx.fillRect(-44,-54,88,54); ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.strokeRect(-44,-54,88,54);
+    const roof = ctx.createLinearGradient(0,-64,0,-52); roof.addColorStop(0,'#b3aeaa'); roof.addColorStop(1,PAL.gris);
+    ctx.fillStyle = roof; ctx.fillRect(-50,-64,100,12); ctx.strokeRect(-50,-64,100,12);
+    ctx.fillStyle = '#fefefc'; ctx.fillRect(-30,-42,18,26); ctx.strokeRect(-30,-42,18,26);
+    ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 2; ctx.strokeRect(-26,-38,10,22);
+    ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    const win = ctx.createLinearGradient(4,-42,4,-24); win.addColorStop(0,'#bfeaf9'); win.addColorStop(1,PAL.celeste);
+    ctx.fillStyle = win; ctx.fillRect(4,-42,20,18); ctx.strokeRect(4,-42,20,18);
+  } else if (kind === 'casa3'){
+    // casa de dos plantas, paleta verde menta + techo oscuro, para no repetir siempre las mismas dos casas.
+    groundShadow(50, 8, 1);
+    const wall = ctx.createLinearGradient(-38,-86,38,0); wall.addColorStop(0,'#cdeede'); wall.addColorStop(1,'#8fcfb2');
+    ctx.fillStyle = wall; ctx.fillRect(-38,-86,76,86); ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.strokeRect(-38,-86,76,86);
+    ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-38,-44); ctx.lineTo(38,-44); ctx.stroke();
+    const roof = ctx.createLinearGradient(0,-104,0,-86); roof.addColorStop(0,'#4a4744'); roof.addColorStop(1,'#2c2a28');
+    ctx.fillStyle = roof; ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-44,-86); ctx.lineTo(0,-104); ctx.lineTo(44,-86); ctx.closePath(); ctx.fill(); ctx.stroke();
+    for (const [wx, wy, ww, wh] of [[-26,-76,16,16],[10,-76,16,16],[-26,-34,16,22],[10,-34,16,22]]){
+      const win = ctx.createLinearGradient(wx,wy,wx,wy+wh); win.addColorStop(0,'#fff4c2'); win.addColorStop(1,PAL.amar);
+      ctx.fillStyle = win; ctx.fillRect(wx,wy,ww,wh); ctx.strokeRect(wx,wy,ww,wh);
+    }
+  } else if (kind === 'cerco'){
+    groundShadow(38, 6, 1);
+    ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    for (let px = -30; px <= 30; px += 15){
+      const g = ctx.createLinearGradient(px-4,0,px+4,0); g.addColorStop(0,'#fff'); g.addColorStop(1,'#d8d6d2');
+      ctx.fillStyle = g; ctx.fillRect(px-4, -34, 8, 34); ctx.strokeRect(px-4,-34,8,34);
+    }
+    ctx.fillStyle = '#e4e1dc'; ctx.fillRect(-34,-26,68,7); ctx.strokeRect(-34,-26,68,7);
+  } else if (kind === 'cono'){
+    groundShadow(18, 5, 1);
+    const g = ctx.createLinearGradient(-16,0,16,0); g.addColorStop(0,'#c96e0f'); g.addColorStop(.5,PAL.naranja); g.addColorStop(1,'#c96e0f');
+    ctx.fillStyle = g; ink(ctx, 3);
+    ctx.beginPath(); ctx.moveTo(-4,-38); ctx.lineTo(4,-38); ctx.lineTo(16,0); ctx.lineTo(-16,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fefefc'; ctx.fillRect(-13,-16,26,6); ctx.strokeRect(-13,-16,26,6);
+  } else if (kind === 'rampa'){
+    groundShadow(20, 6, 1);
+    ctx.fillStyle = PAL.amar; ink(ctx, 3);
+    ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(18,0); ctx.lineTo(6,-34); ctx.lineTo(-6,-34); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    for (const oy of [-8,-18,-28]){ ctx.beginPath(); ctx.moveTo(-14+oy*-.06,oy); ctx.lineTo(14+oy*.06,oy); ctx.stroke(); }
+    ctx.fillStyle = PAL.rojo; ctx.beginPath(); ctx.moveTo(0,-58); ctx.lineTo(-11,-40); ctx.lineTo(-4,-40); ctx.lineTo(-4,-26); ctx.lineTo(4,-26); ctx.lineTo(4,-40); ctx.lineTo(11,-40); ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else if (kind === 'bache'){
+    // pozo/bache: chato sobre el asfalto (no un objeto parado), con borde quebrado — hazard "soft".
+    const g = ctx.createRadialGradient(-4, -3, 2, 0, 0, 22); g.addColorStop(0, '#1c1a17'); g.addColorStop(1, '#3a352e');
+    ctx.fillStyle = g; ink(ctx, 3);
+    ctx.beginPath();
+    ctx.moveTo(-20, -2); ctx.lineTo(-10, -9); ctx.lineTo(2, -4); ctx.lineTo(14, -10); ctx.lineTo(21, -1);
+    ctx.lineTo(12, 6); ctx.lineTo(0, 3); ctx.lineTo(-9, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-1, 1); ctx.lineTo(5, -2); ctx.stroke();
+  } else if (kind === 'perro'){
+    // perro cruzando: cuerpo bajo y alargado, corriendo (patas en tijera), cola arriba.
+    groundShadow(18, 4, 1);
+    const lean = 3;
+    ctx.fillStyle = '#8a5a2b'; ink(ctx, 3);
+    ctx.beginPath(); ctx.ellipse(0, -14, 17, 9, 0, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(15+lean, -18, 8, 7, .3, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#6e441e';
+    ctx.beginPath(); ctx.moveTo(-14, -20); ctx.quadraticCurveTo(-22, -28, -16, -6); ctx.quadraticCurveTo(-12, -14, -14, -20); ctx.closePath(); ctx.fill(); ctx.stroke();
+    for (const [lx, ly] of [[-9, -6], [9, -6]]){
+      ctx.strokeStyle = INK; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - 6, 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(lx + 4, ly); ctx.lineTo(lx + 9, 3); ctx.stroke();
+    }
+    ctx.fillStyle = '#1a1210'; ctx.beginPath(); ctx.arc(21+lean, -20, 2.2, 0, 7); ctx.fill();
+  } else if (kind === 'fuel'){
+    // bidón de nafta clásico: cuerpo rectangular con nervaduras moldeadas, asa gruesa arriba, pico angulado
+    // al costado y tapa — la silueta típica de un bidón de plástico rojo, no un "tubo" genérico.
+    ctx.scale(1.15, 1.15);
+    groundShadow(21, 6, 1);
+    const g = ctx.createLinearGradient(-18, -54, 18, 0); g.addColorStop(0, '#ff6a4a'); g.addColorStop(1, PAL.rojo);
+    ctx.fillStyle = g; ink(ctx, 3.2);
+    rr(ctx, -18, -54, 36, 54, 6); ctx.fill(); ctx.stroke();
+    // nervaduras horizontales moldeadas (típicas del plástico soplado de un bidón real)
+    ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 2;
+    for (const ry of [-40, -28, -16]){ ctx.beginPath(); ctx.moveTo(-16, ry); ctx.lineTo(16, ry); ctx.stroke(); }
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; rr(ctx, -13, -50, 6, 42, 3); ctx.fill();
+    // asa gruesa, tipo agarradera
+    ctx.strokeStyle = INK; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-10, -54); ctx.quadraticCurveTo(-10, -66, 0, -66); ctx.quadraticCurveTo(10, -66, 10, -54); ctx.stroke();
+    // pico angulado con tapa, saliendo hacia el costado como un bidón real
+    ctx.fillStyle = '#3a2a20'; ink(ctx, 2.5);
+    ctx.beginPath(); ctx.moveTo(14, -46); ctx.lineTo(28, -54); ctx.lineTo(31, -48); ctx.lineTo(17, -40); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1a1210'; ctx.beginPath(); ctx.arc(29, -51, 4, 0, 7); ctx.fill(); ctx.stroke();
+    // etiqueta de peligro/inflamable: llama amarilla sobre un rombo, para que se lea "nafta" de un vistazo
+    ctx.fillStyle = '#fff3c4'; ink(ctx, 2); rr(ctx, -11, -30, 22, 20, 3); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = PAL.amar; ink(ctx, 2);
+    ctx.beginPath(); ctx.moveTo(0, -26); ctx.quadraticCurveTo(-6, -17, 0, -11); ctx.quadraticCurveTo(6, -17, 0, -26); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = PAL.rojo; ctx.beginPath(); ctx.moveTo(0, -22); ctx.quadraticCurveTo(-3, -16, 0, -13); ctx.quadraticCurveTo(3, -16, 0, -22); ctx.closePath(); ctx.fill();
+  } else if (kind === 'auto_viejo'){
+    drawOldCar('#e2c168', '#c9a23a', '#8a6c22');
+  } else if (kind === 'auto_r'){
+    drawOldCar('#f16d5e', PAL.rojo, '#8f1a14');
+  } else if (kind === 'auto_g'){
+    drawOldCar('#c3c8cb', '#9aa0a4', '#5c6266');
+  } else if (kind === 'colectivo'){
+    groundShadow(70, 10, 1);
+    const body = ctx.createLinearGradient(0,-70,0,0); body.addColorStop(0,'#ffab3d'); body.addColorStop(1,PAL.naranja);
+    ctx.fillStyle = body; ink(ctx, 4);
+    ctx.fillRect(-64,-70,128,64); ctx.strokeRect(-64,-70,128,64);
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(-64,-70,128,10);
+    const win = ctx.createLinearGradient(0,-62,0,-42); win.addColorStop(0,'#d9f2fb'); win.addColorStop(1,PAL.celeste);
+    ctx.fillStyle = win; ctx.fillRect(-56,-62,112,20); ink(ctx,3); ctx.strokeRect(-56,-62,112,20);
+    ctx.strokeStyle = INK; ctx.lineWidth = 2.4;
+    for (let wx = -56; wx < 56; wx += 16){ ctx.beginPath(); ctx.moveTo(wx,-62); ctx.lineTo(wx,-42); ctx.stroke(); }
+    for (const wx of [-38, 38]){
+      ctx.fillStyle = '#141414'; ctx.beginPath(); ctx.arc(wx,-4,12,0,7); ctx.fill(); ink(ctx,2.4); ctx.stroke();
+      ctx.fillStyle = '#9aa0a4'; ctx.beginPath(); ctx.arc(wx,-4,5,0,7); ctx.fill();
+    }
+  } else if (kind === 'checkpoint'){
+    groundShadow(14, 4, 3);
+    ctx.strokeStyle = '#8a5a2b'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(0,4); ctx.lineTo(0,-96); ctx.stroke();
+    ctx.fillStyle = PAL.amar; ink(ctx, 3);
+    ctx.beginPath(); ctx.moveTo(0,-96); ctx.lineTo(46,-84); ctx.lineTo(0,-72); ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else if (kind === 'abuela'){
+    groundShadow(20, 5, 2);
+    if (!drawDeco._abuelaA) { drawDeco._abuelaA = abuelaCanvas(0); drawDeco._abuelaB = abuelaCanvas(1); }
+    // animación de caminata: alterna las dos poses de piernas según el reloj, no una pose fija clavada.
+    const walkFrame = Math.floor(performance.now() / 220) % 2 === 0 ? drawDeco._abuelaA : drawDeco._abuelaB;
+    ctx.drawImage(walkFrame, -30, -120, 60, 120);
+  } else if (kind === 'mamaSaluda'){
+    groundShadow(26, 6, 2);
+    if (!drawDeco._mama) drawDeco._mama = mamaWaveCanvas();
+    ctx.drawImage(drawDeco._mama, -45, -170, 90, 170);
+  }
+  ctx.restore();
+}
+
+function render(){
+  ctx.clearRect(0, 0, W, H);
+  const baseSegment = findSegment(position);
+  const basePercent = (position % ROAD.SEG_LEN) / ROAD.SEG_LEN;
+  const playerSegment = baseSegment;
+  drawBackground(playerSegment.curve);
+
+  let x = 0, dx = -(playerSegment.curve * basePercent), maxy = H;
+  const camHeight = CAM.HEIGHT + (baseSegment.p1.world.y);
+  const toDraw = [];
+  for (let n = 0; n < CAM.DRAW_DIST; n++){
+    const idx = baseSegment.index + n;
+    if (idx >= segments.length) break;
+    const segment = segments[idx];
+    project(segment.p1, (playerX * ROAD.W) - x, camHeight, position, CAM.DEPTH, W, H, ROAD.W);
+    project(segment.p2, (playerX * ROAD.W) - x - dx, camHeight, position, CAM.DEPTH, W, H, ROAD.W);
+    x += dx; dx += segment.curve;
+    segment.clip = maxy;
+    if (segment.p1.camera.z <= CAM.DEPTH) continue;
+    if (segment.p2.screen.y >= maxy) continue;
+    const isDirt = segment.terrain === 'dirt';
+    const grass = segment.dark ? PAL.verdeOsc : PAL.verde;
+    const veredaC = isDirt ? (segment.dark ? PAL.banquinaOsc : PAL.banquina) : (segment.dark ? PAL.veredaOsc : PAL.vereda);
+    const rumbleC = isDirt ? (segment.dark ? PAL.tierraOsc : PAL.tierra) : (segment.dark ? '#fefefc' : PAL.rojo);
+    const roadC = isDirt ? (segment.dark ? PAL.tierraOsc : PAL.tierra) : (segment.dark ? PAL.asfaltoOsc : PAL.asfalto);
+    drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, W, segment.p2.screen.x, segment.p2.screen.y, W, grass);
+    drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w * 1.55, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w * 1.55, veredaC);
+    drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w * 1.15, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w * 1.15, rumbleC);
+    drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w, roadC);
+    if (!segment.dark && !isDirt){
+      const lw1 = Math.min(segment.p1.screen.w * .04, 10), lw2 = Math.min(segment.p2.screen.w * .04, 10);
+      drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, lw1, segment.p2.screen.x, segment.p2.screen.y, lw2, '#fefefc');
+    }
+    maxy = segment.p2.screen.y;
+    toDraw.push(segment);
+  }
+  for (let i = toDraw.length - 1; i >= 0; i--){
+    const segment = toDraw[i];
+    for (const spr of segment.sprites){
+      const scale = segment.p1.screen.scale;
+      const sx = segment.p1.screen.x + (spr.side * segment.p1.screen.w * spr.offset);
+      const sy = segment.p1.screen.y;
+      // nota: segment.clip queda casi igual a sy en terreno llano (mismo punto físico que el borde lejano
+      // del segmento anterior), así que compararlos con "<" estricto descartaba casi todos los sprites.
+      // el propio chequeo de oclusión del segmento (p2.screen.y >= maxy) ya filtró lo que está detrás de una loma.
+      // umbral bajo a propósito: con uno alto (ej. 0.0006) el decorado y los obstáculos recién aparecían a
+      // ~5 segmentos del auto (una fracción de segundo a fondo), invisibles hasta último momento. Con este
+      // umbral se empiezan a ver creciendo desde bastante antes, dando tiempo real a reaccionar.
+      if (scale > 0.00012) drawDeco(spr.kind, sx, sy, scale * 3400, spr.side);
+    }
+    for (const t of traffic){
+      if (Math.floor(t.z / ROAD.SEG_LEN) !== segment.index) continue;
+      const scale = segment.p1.screen.scale;
+      const sx = segment.p1.screen.x + t.x * segment.p1.screen.w;
+      const sy = segment.p1.screen.y;
+      if (scale > 0.00012) drawDeco(t.kind, sx, sy, scale * 3400, 1);
+    }
+  }
+  // líneas de velocidad a los costados: refuerzan la sensación de ir a fondo, típico arcade
+  if (speed > MAX_SPEED * .55){
+    const amt = Math.min(1, (speed / MAX_SPEED - .55) / .45);
+    ctx.save(); ctx.globalAlpha = amt * .35; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    for (let i = 0; i < 7; i++){
+      const yy = 20 + i * (H - 40) / 7 + (bounceT * 40) % 30;
+      const len = 26 + amt * 40;
+      ctx.beginPath(); ctx.moveTo(4, yy); ctx.lineTo(4 + len, yy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W - 4, yy); ctx.lineTo(W - 4 - len, yy); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // auto del jugador, fijo cerca de la base de la pantalla; sigue al volante (inclinación) y salta en las lomas
+  const speedPct2 = speed / MAX_SPEED;
+  const bounce = Math.sin(bounceT) * 1.6 * Math.min(1, speedPct2 + .15);
+  // usa airTotal (duración real de ESTE salto) en vez de la constante fija .6 de antes: con el salto largo
+  // del turbo (airTotal=1) esa cuenta vieja daba progreso negativo al arrancar y el auto se hundía un
+  // instante antes de subir.
+  const jumpArc = airT > 0 ? Math.sin(Math.min(1, (airTotal - airT) / airTotal) * Math.PI) : 0;
+  ctx.save();
+  // el auto estaba pegado al borde inferior del canvas (ruedas cortadas, casi sin piso/sombra visible
+  // debajo), lo que lo hacía ver "flotando" en vez de apoyado en la ruta. Con más margen abajo se ve
+  // el asfalto y la sombra de contacto completa debajo de las cuatro ruedas.
+  // H-70 quedó demasiado alto: el auto terminaba en el CENTRO vertical de la pantalla, tapando media
+  // escena y dejando poco lugar para ver la ruta. Con H-46 las ruedas siguen completas y con sombra
+  // visible, pero el auto vuelve a quedar pegado abajo como corresponde a la cámara "detrás del auto".
+  // la sombra estaba anclada a una distancia FIJA del borde del canvas (H-12), no del auto: cuando subí
+  // el auto (H-34 -> H-46) la sombra se quedó atrás, con un hueco de ~40px de asfalto liso entre las
+  // ruedas y la sombra — exactamente lo que se lee como "auto flotando". Ahora sale del mismo ancla que
+  // el auto (carGroundY) y no sigue el salto/rebote en Y (la sombra queda en el piso, el auto se despega
+  // de ella al saltar), solo se angosta con jumpArc para dar sensación de altura.
+  // auto más chico (0.8x) y más abajo: antes ocupaba tanto alto de pantalla que tapaba la mayor parte
+  // de la ruta/horizonte que ya se venía renderizando arriba — "no veo lo que hay adelante" no era la
+  // cámara, era el auto tapando la vista. Con esto queda más lugar arriba para ver venir la ruta.
+  const carGroundY = H - 30, carScale = 0.68;
+  groundShadowAt(W/2 + playerX*40, carGroundY + 7, 52 * (1 - jumpArc*.4), 9 * (1 - jumpArc*.6), .4 - jumpArc*.2);
+  const bumpShake = bumpT > 0 ? Math.sin(bumpT * 90) * bumpT * 7 : 0;
+  ctx.translate(W/2 + playerX*40, carGroundY - bounce - jumpArc*46 + bumpShake);
+  ctx.rotate(carTilt);
+  ctx.scale(carScale, carScale);
+  if (jumpArc > 0) ctx.scale(1 + jumpArc*.08, 1 + jumpArc*.1);
+  if (turboT > 0){
+    for (const ox of [-46, 46]){
+      ctx.fillStyle = Math.random() < .5 ? '#ffb020' : '#ff5a1e';
+      ctx.beginPath(); ctx.moveTo(ox, 8); ctx.lineTo(ox - 10, 28 + Math.random()*20); ctx.lineTo(ox + 10, 28 + Math.random()*20); ctx.closePath(); ctx.fill();
+    }
+  }
+  const offroadNow = playerX < -1 || playerX > 1;
+  if (offroadNow && speed > OFFROAD_LIMIT){
+    ctx.fillStyle = 'rgba(140,120,95,.5)';
+    for (const ox of [-40, 40]){ ctx.beginPath(); ctx.ellipse(ox + (Math.random()-.5)*12, 20 + Math.random()*10, 10 + Math.random()*8, 7, 0, 0, 7); ctx.fill(); }
+  }
+  if (crashT > 0){ ctx.rotate(crashSpin * crashT * 2); ctx.scale(1 + Math.sin(crashT*30)*.05, 1); }
+  else if (invT > 0 && Math.floor(invT * 12) % 2) ctx.globalAlpha = .35;
+  ctx.drawImage(carCanvas, -110, -160, 220, 170);
+  // el glow tiene que dibujarse en el mismo espacio local que el auto (drawImage lo corrió a -110,-160): sin este
+  // translate, drawBrakeGlow pintaba las luces mucho más a la derecha/abajo del auto real y nunca se veía nada.
+  ctx.save(); ctx.translate(-110, -160);
+  drawBrakeGlow(ctx, 220, 170, keys.has('ArrowDown')||keys.has('KeyS'));
+  const wheelAngle = (position / 14) % (Math.PI * 2);
+  drawWheelSpin(38, 128, wheelAngle); drawWheelSpin(182, 128, wheelAngle);
+  ctx.restore();
+  ctx.restore();
+}
+function drawWheelSpin(cx, cy, angle){
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle);
+  ctx.strokeStyle = '#e8eaec'; ctx.lineWidth = 2.4;
+  for (let a = 0; a < 5; a++){ const ang = a / 5 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ang) * 10, Math.sin(ang) * 11.5); ctx.stroke(); }
+  ctx.fillStyle = '#141414'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function groundShadowAt(x, y, rx, ry, alpha){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.fill(); ctx.restore();
+}
+
+function loop(ts){
+  const dt = Math.min(1/30, (loop._last ? (ts - loop._last) : 16) / 1000); loop._last = ts;
+  updateCar(dt);
+  if (canvas) render();
+  updateHud();
+  requestAnimationFrame(loop);
+}
+function updateHud(){
+  $('#chipSpeed').textContent = Math.round(speed / ROAD.SEG_LEN * 3.2) + ' km/h';
+  $('#chipRadio').textContent = '♪ ' + RADIO_NAMES[RADIO.station()];
+  $('#chipTime').textContent = fmtTime(timeLeft);
+  $('#chipTime').classList.toggle('warn', timeLeft < 10);
+  $('#chipStage').textContent = 'Etapa 1/5 · ' + score + ' pts';
+  const fuelPct = Math.max(0, fuel / FUEL_MAX * 100);
+  $('#fuelFill').style.width = fuelPct + '%';
+  $('#fuelBar').classList.toggle('low', fuelPct < 25);
+}
+
+/* ---------------- arranque / flujo ---------------- */
+async function boot(){
+  carCanvas = carBackCanvas();
+  canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
+  $('#game').appendChild(canvas); ctx = canvas.getContext('2d');
+  $('#tCleto').src = 'img/cleto.png'; $('#tFlauta').src = 'img/flauta.png';
+  await wait(300);
+  show('cacatua'); requestAnimationFrame(() => $('#cacatua').classList.add('on'));
+  let skipped = false; const skip = () => skipped = true;
+  $('#cacatua').addEventListener('pointerdown', skip, { once:true });
+  window.addEventListener('keydown', skip, { once:true });
+  for (let t = 0; t < 16 && !skipped; t++) await wait(100);
+  show('logo'); requestAnimationFrame(() => $('#logo').classList.add('on'));
+  skipped = false;
+  $('#logo').addEventListener('pointerdown', skip, { once:true });
+  for (let t = 0; t < 14 && !skipped; t++) await wait(100);
+  show('card'); requestAnimationFrame(() => $('#card').classList.add('on'));
+}
+$('#card').addEventListener('pointerdown', () => { unlockAudio(); hideAll(); RADIO.setStation(0); $('#lcdText').textContent = RADIO_NAMES[0]; show('radio'); });
+$('#radioPrev').addEventListener('click', () => { const n = (RADIO.station()+2)%3; RADIO.setStation(n); $('#lcdText').textContent = RADIO_NAMES[n]; SFX.click(); });
+$('#radioNext').addEventListener('click', () => { const n = (RADIO.station()+1)%3; RADIO.setStation(n); $('#lcdText').textContent = RADIO_NAMES[n]; SFX.click(); });
+$('#radioGo').addEventListener('click', startRace);
+
+function startRace(){
+  hideAll();
+  resetRun();
+  gameRunning = true;
+  RADIO.start();
+  ENGINE.start();
+  showHud();
+  voice('musicatranquila');
+  requestAnimationFrame(loop);
+}
+function showHud(){ $('#hud').hidden = false; $('#hudR').hidden = false; $('#tr').hidden = false; $('#help').hidden = isTouch; $('#touch').hidden = !isTouch; }
+function hideHud(){ $('#hud').hidden = $('#hudR').hidden = $('#tr').hidden = $('#help').hidden = $('#touch').hidden = $('#sub').hidden = true; }
+
+/* ---------------- input ---------------- */
+const isTouch = matchMedia('(pointer:coarse)').matches;
+window.addEventListener('keydown', e => {
+  keys.add(e.code);
+  if (e.code === 'KeyM' && gameRunning){ RADIO.setStation(RADIO.station()+1); SFX.click(); }
+  if ((e.code === 'Escape' || e.code === 'KeyP') && gameRunning){ pauseGame(); }
+});
+window.addEventListener('keyup', e => keys.delete(e.code));
+function bindTouchBtn(id, code){
+  const el = $(id);
+  el.addEventListener('pointerdown', e => { e.preventDefault(); keys.add(code); });
+  el.addEventListener('pointerup', () => keys.delete(code));
+  el.addEventListener('pointerleave', () => keys.delete(code));
+}
+bindTouchBtn('#tLeft', 'ArrowLeft'); bindTouchBtn('#tRight', 'ArrowRight');
+bindTouchBtn('#tGas', 'ArrowUp'); bindTouchBtn('#tBrake', 'ArrowDown');
+$('#tTurbo').addEventListener('pointerdown', e => { e.preventDefault(); keys.add('Space'); setTimeout(() => keys.delete('Space'), 80); });
+
+function pauseGame(){ gameRunning = false; RADIO.stop(); ENGINE.stop(); show('pause'); }
+$('#resume').addEventListener('click', () => { hideAll(); showHud(); gameRunning = true; RADIO.start(); ENGINE.start(); requestAnimationFrame(loop); });
+$('#restart').addEventListener('click', () => { hideAll(); startRace(); });
+for (const id of ['#toMenu','#toMenu2','#toMenu3']) $(id).addEventListener('click', () => location.href = 'cleto3d.html');
+$('#again').addEventListener('click', () => { hideAll(); startRace(); });
+$('#cont').addEventListener('click', () => { hideAll(); startRace(); });
+$('#muteBtn').addEventListener('click', () => { muted = !muted; $('#muteBtn').textContent = muted ? '×' : '♪'; RADIO.mute(muted); });
+$('#pauseBtn').addEventListener('click', () => gameRunning ? pauseGame() : null);
+
+window.__cap2DebugSprites = () => {
+  const base = findSegment(position);
+  const out = [];
+  for (let n = 0; n < 40; n++){
+    const seg = segments[base.index + n]; if (!seg) break;
+    const sc = seg.p1.screen;
+    const sprites = seg.sprites.map(s => ({ kind: s.kind, sx: sc.x + s.side * sc.w * s.offset, sy: sc.y, onscreen: sc.x + s.side*sc.w*s.offset >= -20 && sc.x + s.side*sc.w*s.offset <= 660 && sc.y >= 0 && sc.y <= 380 }));
+    out.push({ n, scale: sc.scale, sy: sc.y, sx: sc.x, sprites });
+  }
+  const trafficOut = traffic.map(t => {
+    const segIdx = Math.floor(t.z / ROAD.SEG_LEN), seg = segments[segIdx], n = segIdx - base.index;
+    if (!seg || !seg.p1.screen || n < 4 || n > 40) return { kind: t.kind, onscreen: false, n };
+    const sc = seg.p1.screen, sx = sc.x + t.x * sc.w;
+    return { kind: t.kind, sx, sy: sc.y, scale: sc.scale, n, onscreen: sx >= 10 && sx <= 630 && sc.y >= 0 && sc.y <= 358 && sc.scale > 0.00015 };
+  });
+  return { segs: out, traffic: trafficOut };
+};
+/* hook de solo lectura para testing automatizado (Playwright); no afecta el juego */
+window.__cap2Debug = () => ({
+  position, playerX, speed, speedKmh: Math.round(speed / ROAD.SEG_LEN * 3.2),
+  timeLeft, score, crashes, abuelaDodges, trackLen, gameRunning, stageDone, fuel,
+  traffic: traffic.map(t => ({ z: t.z, x: t.x, hit: t.hit })),
+});
+
+boot();
+})();
+</script>
