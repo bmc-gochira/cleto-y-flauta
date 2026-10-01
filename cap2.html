@@ -65,6 +65,8 @@ kbd{font:700 13px/1 "Comic Neue",cursive;border:2px solid var(--ink);border-radi
 .stats{display:grid;grid-template-columns:auto auto;gap:4px 18px;font-size:19px;text-align:left}
 .stats b{text-align:right;font-variant-numeric:tabular-nums}
 
+.artwrap{width:100%;max-width:360px;line-height:0}
+.artwrap canvas{width:100%;height:auto;display:block;border:4px solid var(--ink);border-radius:10px;box-shadow:4px 4px 0 var(--ink)}
 #later{background:#9a9a9a;color:#6b6b6b;font:700 italic clamp(26px,5vw,40px)/1 "Comic Neue",cursive}
 #later span{text-shadow:0 1px 0 #b8b8b8}
 #ending{background:#000;padding:0}
@@ -191,6 +193,15 @@ kbd{font:700 13px/1 "Comic Neue",cursive;border:2px solid var(--ink);border-radi
   </div>
 </section>
 
+<section class="screen panel-bg" id="handoff" hidden>
+  <div class="panel">
+    <h3>Cleto entrega el auto</h3>
+    <div class="artwrap" id="handoffArt"></div>
+    <p>Después del atajo por el espacio, Cleto baja, se despide del auto con una palmada y le pasa las llaves a un nuevo dueño.</p>
+    <div class="row"><button class="btn small" id="handoffGo">Ver resultados</button></div>
+  </div>
+</section>
+
 <section class="screen panel-bg" id="results" hidden>
   <div class="panel">
     <h3>¡Capítulo Nº2 superado!</h3>
@@ -223,7 +234,7 @@ function rr(x, px, py, w, h, r){ x.beginPath(); x.moveTo(px+r,py); x.arcTo(px+w,
 function seeded(n){ let s = n; return () => (s = (s * 9301 + 49297) % 233280) / 233280; }
 
 /* ---------------- pantallas ---------------- */
-const SCREENS = ['loading','cacatua','logo','card','radio','later','ending','pause','over','results'];
+const SCREENS = ['loading','cacatua','logo','card','radio','later','ending','pause','over','handoff','results'];
 function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); }
 function hideAll(){ for (const s of SCREENS) $('#'+s).hidden = true; }
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -286,14 +297,23 @@ const ENGINE = (() => {
     update(speedPct, offroad){
       if (!running || muted || !actx){ if (gain) gain.gain.setTargetAtTime(0, actx.currentTime, .12); return; }
       ensure();
-      const t = actx.currentTime, f = 34 + speedPct * 118;
+      const t = actx.currentTime;
+      // antes el motor era un tono limpio que solo seguía speedPct: sonaba siempre igual a una
+      // revolución dada, sin la irregularidad de un motor real. drift es una deriva lenta (suma de dos
+      // senos de período largo e inconmensurable, no un LFO audible) que hace que el tono "respire" un
+      // poco en vez de ser matemáticamente estable, aunque el auto vaya a velocidad constante.
+      const drift = Math.sin(t * .53) * 2.2 + Math.sin(t * 1.31) * 1.4;
+      const f = 34 + speedPct * 118 + drift * .6;
       osc1.frequency.setTargetAtTime(f, t, .07); osc2.frequency.setTargetAtTime(f * 1.97, t, .07);
       sub.frequency.setTargetAtTime(f * .5, t, .07);
-      filter.frequency.setTargetAtTime(280 + speedPct * 1900, t, .06);
+      filter.frequency.setTargetAtTime(280 + speedPct * 1900 + Math.sin(t * 2.3) * 45, t, .06);
       const baseVol = .07 + speedPct * .1 + (offroad ? .035 : 0);
       gain.gain.setTargetAtTime(baseVol, t, .08);
-      // el tironeo de ralentí se nota a baja vueltas y se aplana al acelerar (motor real: lope solo al mínimo)
-      lfoGain.gain.setTargetAtTime(Math.max(0, .05 - speedPct * .05) * baseVol * 6, t, .1);
+      // el tironeo (throb de las explosiones del cilindro) antes era un LFO de frecuencia fija que se
+      // aplanaba del todo a fondo; un motor real no deja de pulsar a altas vueltas, solo pulsa más rápido
+      // y más sutil. Ahora el throb acelera con las revoluciones (8-22Hz) y nunca llega a cero del todo.
+      lfo.frequency.setTargetAtTime(8 + speedPct * 14, t, .15);
+      lfoGain.gain.setTargetAtTime(Math.max(.012, .05 - speedPct * .04) * baseVol * 6, t, .1);
     },
   };
 })();
@@ -535,15 +555,95 @@ function abuelaCanvas(step){
     for (const sd of [-1,1]) { x.beginPath(); x.ellipse(35+sd*12+lean*sd*.3, 128, 8, 9, 0, 0, 7); x.fill(); x.stroke(); }
   });
 }
+/* ------------- escena de entrega del auto (final del tramo espacial, ver showHandoff) ------------- */
+function cletoStandCanvas(){
+  // Cleto de pie entregando la llave: mismo recurso que mamaWaveCanvas (pelado + campera + brazo
+  // extendido), recoloreado a su paleta (campera verde azulada, como en foto_duo.jpg).
+  return paintCanvas(130, 190, (x) => {
+    x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(50, 186, 34, 6, 0, 0, 7); x.fill();
+    ink(x, 5);
+    const skin = x.createRadialGradient(46, 30, 3, 48, 36, 26); skin.addColorStop(0, '#ffe0bb'); skin.addColorStop(1, '#e6b285');
+    x.fillStyle = skin; x.beginPath(); x.arc(48, 36, 25, 0, 7); x.fill(); x.stroke();
+    x.fillStyle = 'rgba(214,120,110,.3)';
+    x.beginPath(); x.ellipse(36, 42, 4, 2.6, 0, 0, 7); x.fill();
+    x.beginPath(); x.ellipse(60, 42, 4, 2.6, 0, 0, 7); x.fill();
+    x.fillStyle = INK; x.beginPath(); x.arc(38, 34, 2.2, 0, 7); x.fill(); x.beginPath(); x.arc(58, 34, 2.2, 0, 7); x.fill();
+    x.strokeStyle = INK; x.lineWidth = 3; x.beginPath(); x.moveTo(40, 50); x.quadraticCurveTo(48, 55, 56, 50); x.stroke();
+    const jacket = x.createLinearGradient(14, 64, 82, 186); jacket.addColorStop(0, '#2a9c82'); jacket.addColorStop(1, '#155e4c');
+    x.fillStyle = jacket; ink(x, 5);
+    x.beginPath(); x.moveTo(16, 186); x.lineTo(20, 74); x.quadraticCurveTo(48, 60, 76, 74); x.lineTo(80, 186); x.closePath(); x.fill(); x.stroke();
+    // brazo extendido con la llave
+    x.strokeStyle = '#e6b285'; x.lineWidth = 14; x.lineCap = 'round';
+    x.beginPath(); x.moveTo(72, 88); x.lineTo(104, 104); x.stroke();
+    x.fillStyle = PAL.amar; ink(x, 2.4); x.beginPath(); x.arc(110, 106, 7, 0, 7); x.fill(); x.stroke();
+    x.strokeStyle = INK; x.lineWidth = 3;
+    x.beginPath(); x.moveTo(117, 106); x.lineTo(126, 106); x.moveTo(121, 106); x.lineTo(121, 111); x.stroke();
+  });
+}
+function hitchhikerCanvas(){
+  // cameo del prompt de diseño (PROMPT_CAP2_SUPERABUELA.md): "el tipo con cabeza de foto real, remera
+  // naranja, haciendo dedo". Sin ningún asset de foto en el proyecto para esto, el placeholder queda a
+  // propósito SIN cara (óvalo liso + borde punteado, sin ojos/cejas/boca): una cara de Paint terminada
+  // competiría con el gag real cuando se reemplace por la foto — el punteado marca "acá va una foto".
+  return paintCanvas(130, 190, (x) => {
+    x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(80, 186, 34, 6, 0, 0, 7); x.fill();
+    ink(x, 5);
+    x.fillStyle = '#241b12'; x.beginPath(); x.arc(80, 24, 22, 3.5, 6.1); x.fill(); x.stroke();
+    const skin = x.createRadialGradient(78, 30, 3, 80, 36, 26); skin.addColorStop(0, '#e9dcc8'); skin.addColorStop(1, '#cdbfa8');
+    x.fillStyle = skin; x.beginPath(); x.arc(80, 36, 25, 0, 7); x.fill(); x.stroke();
+    x.save(); x.setLineDash([4, 4]); x.strokeStyle = 'rgba(1,2,2,.5)'; x.lineWidth = 2;
+    x.beginPath(); x.arc(80, 36, 18, 0, 7); x.stroke(); x.restore();
+    const shirt = x.createLinearGradient(46, 64, 114, 186); shirt.addColorStop(0, '#ff8a3d'); shirt.addColorStop(1, PAL.naranja);
+    x.fillStyle = shirt; ink(x, 5);
+    x.beginPath(); x.moveTo(114, 186); x.lineTo(110, 74); x.quadraticCurveTo(80, 60, 52, 74); x.lineTo(48, 186); x.closePath(); x.fill(); x.stroke();
+    // brazo extendido, mano recibiendo la llave
+    x.strokeStyle = skin; x.lineWidth = 14; x.lineCap = 'round';
+    x.beginPath(); x.moveTo(56, 88); x.lineTo(24, 104); x.stroke();
+    x.fillStyle = skin; ink(x, 2.4); x.beginPath(); x.arc(18, 106, 9, 0, 7); x.fill(); x.stroke();
+  });
+}
+function handoffCanvas(){
+  return paintCanvas(340, 210, (x, w, h) => {
+    const sky = x.createLinearGradient(0, 0, 0, h * .68); sky.addColorStop(0, '#2a2454'); sky.addColorStop(1, '#a4587c');
+    x.fillStyle = sky; x.fillRect(0, 0, w, h * .68);
+    x.fillStyle = '#e8b64a'; x.beginPath(); x.arc(w * .82, h * .28, 26, 0, 7); x.fill();
+    x.fillStyle = '#35304a'; x.fillRect(0, h * .68, w, h * .32);
+    x.strokeStyle = 'rgba(255,255,255,.15)'; x.lineWidth = 3; x.beginPath(); x.moveTo(0, h * .68); x.lineTo(w, h * .68); x.stroke();
+    // auto (reusa el sprite de atrás de cap2, ya parado para la escena)
+    if (carCanvas){ x.save(); x.translate(w * .5, h * .86); x.scale(.62, .62); x.drawImage(carCanvas, -110, -160, 220, 170); x.restore(); }
+    if (!handoffCanvas._cleto) handoffCanvas._cleto = cletoStandCanvas();
+    if (!handoffCanvas._hh) handoffCanvas._hh = hitchhikerCanvas();
+    x.drawImage(handoffCanvas._cleto, 4, h - 190);
+    // acercado de w-134 a w-213: con w-134 la punta de la llave (x local ~126 en cletoStandCanvas) y la
+    // mano del autoestopista (x local ~18 acá) quedaban a ~85px de distancia, más ancho que un personaje
+    // — el gesto de "entregar la llave" no se leía. Así casi se tocan.
+    x.drawImage(handoffCanvas._hh, w - 213, h - 190);
+  });
+}
+function showHandoff(){
+  const art = $('#handoffArt');
+  if (!art.dataset.built){
+    art.appendChild(handoffCanvas());
+    art.dataset.built = '1';
+  }
+  show('handoff');
+}
 
 /* ---------------- motor pseudo-3D estilo Out Run ---------------- */
 const W = 640, H = 360;
 const ROAD = { W: 2000, SEG_LEN: 200, RUMBLE: 3, LANES: 3 };
+// ancho de la franja de tierra de una bifurcación (ver forkAt): deja lugar cómodo a los dos lados.
+const ISLAND_HALF = .22;
 // HEIGHT más alto = cámara más "de arriba"; FOV más ancho compensa para que la zona muerta justo
 // delante del auto (proporcional a HEIGHT × DEPTH, con DEPTH = 1/tan(FOV/2)) no crezca y esconda
 // el decorado/obstáculos cercanos (con FOV angosto quedaban invisibles hasta ~9 segmentos de distancia).
 const CAM = { HEIGHT: 1400, FOV: 115, DRAW_DIST: 300 };
 CAM.DEPTH = 1 / Math.tan((CAM.FOV / 2) * Math.PI / 180);
+// umbral de escala a partir del cual un sprite/auto de tráfico se dibuja (ver render()): antes era
+// 0.00012 fijo, visible recién a ~26 segmentos de distancia (<1s a fondo). Con SPR_VIS más chico se
+// vuelve visible desde ~106 segmentos y crece opacidad gradualmente hasta SPR_FADE_END en vez de
+// aparecer de golpe.
+const SPR_VIS = 0.00003, SPR_FADE_END = 0.00014;
 
 function easeIn(a, b, p){ return a + (b - a) * Math.pow(p, 2); }
 function easeOut(a, b, p){ return a + (b - a) * (1 - Math.pow(1 - p, 2)); }
@@ -589,6 +689,14 @@ function obstacleAt(index, side, kind, offset, hitW){
   const off = offset || 0, finalSide = side || (off < 0 ? -1 : 1);
   decoAt(index, finalSide, kind, Math.abs(off), { hazard:true, hitW: hitW || .16 });
 }
+function camionAt(index, side, offset){
+  // camión parado atravesado en el carril: tapa gran parte del ancho (no todo), fuerza un cambio de
+  // carril real en vez de un esquive chico como el cono. hitW calibrado con la misma proporción que
+  // trafficAt usa para los autos (~.0062 por unidad de medio-ancho local, acá ~70) para que se sienta
+  // tan ancho como se ve dibujado.
+  const off = offset || .5, finalSide = side || (off < 0 ? -1 : 1);
+  decoAt(index, finalSide, 'camion', Math.abs(off), { hazard:true, hitW: .42 });
+}
 function bacheAt(index, side, offset){
   // pozo/bache: mismo sistema de colisión que un cono, pero "soft" -> sacudón corto en vez de choque completo.
   // hitW bajado de .34 a .18: a esa escala visual (el bache dibujado mide ~20 unidades locales de mitad-ancho,
@@ -619,6 +727,17 @@ function jumpAt(index){
   segments[index].jump = true;
   decoAt(index, -1, 'rampa', 1.05); decoAt(index, 1, 'rampa', 1.05);
 }
+function forkAt(index, len){
+  // bifurcación falsa: el motor es un único camino de segmentos, no dos rutas paralelas de verdad,
+  // así que en vez de bifurcar el trazado abrimos una franja de tierra al medio (ver ISLAND_HALF)
+  // que obliga a elegir un lado y frena si la pisás — mismo efecto jugable que "el camino se divide
+  // en dos con tierra al medio" sin reescribir el proyector pseudo-3D. Conos marcan la apertura y el
+  // cierre para que se lea como un cruce, no como un bache gigante.
+  for (let i = index; i < index + len && segments[i]; i++) segments[i].island = true;
+  if (segments[index]) segments[index].islandStart = true;
+  decoAt(index - 3, -1, 'cono', .3); decoAt(index - 3, 1, 'cono', .3);
+  decoAt(index + len, -1, 'cono', .3); decoAt(index + len, 1, 'cono', .3);
+}
 function trafficAt(startIndex, x, speedMul, kind, opts){
   // auto de tráfico que avanza solo por la ruta (no fijo como el resto del decorado): esto es lo que
   // te "cruza" en el camino. swerveTo hace que, cuando te acercás, se cambie de carril para forzar la esquiva.
@@ -627,11 +746,53 @@ function trafficAt(startIndex, x, speedMul, kind, opts){
   }, opts));
 }
 
+function spaceObstacleAt(z, x, y, kind){
+  // asteroide/satélite del tramo espacial: a diferencia de los obstáculos de ruta, tienen X e Y (además
+  // del avance Z ya existente) porque ahí el auto se controla en dos ejes. hitW/hitH calibrados al
+  // tamaño real dibujado (ver SILH_SIZE/drawDeco 'asteroide'/'satelite').
+  spaceObstacles.push({ z, x, y, kind, hit: false, hitW: kind === 'satelite' ? .32 : .26, hitH: kind === 'satelite' ? .3 : .26 });
+}
+const SPACE_LIFTOFF = 70, SPACE_CORRIDOR = 260, SPACE_LANDING = 70;
+function addSpaceZone(){
+  // "Etapa media" del capítulo (expansión arcade, no canon — ver PROMPT_CAP2_SUPERABUELA.md): el auto
+  // despega y por un rato se controla en dos ejes (X con el volante de siempre, Y -altura- con
+  // arriba/abajo) esquivando asteroides y satélites mientras avanza solo. segment.spaceMix (0..1) marca
+  // cuánto se ve el fondo espacial en cada segmento, para que el fundido de fondo Y ruta (ver render())
+  // sea gradual en vez de un corte — "el escenario vaya cambiando de a poco" que pidió el diseñador.
+  const liftStart = segments.length;
+  addHill(SPACE_LIFTOFF, 1.8); // despegue: rampa larga hacia arriba
+  for (let i = liftStart; i < liftStart + SPACE_LIFTOFF; i++) segments[i].spaceMix = (i - liftStart) / SPACE_LIFTOFF;
+
+  const corridorStart = segments.length;
+  addStraight(SPACE_CORRIDOR);
+  for (let i = corridorStart; i < corridorStart + SPACE_CORRIDOR; i++) segments[i].spaceMix = 1;
+
+  const landStart = segments.length;
+  addHill(SPACE_LANDING, -1.8); // aterrizaje: baja antes de la escena final de entrega del auto
+  for (let i = landStart; i < landStart + SPACE_LANDING; i++) segments[i].spaceMix = 1 - (i - landStart) / SPACE_LANDING;
+  segments[liftStart].spaceStart = true; // dispara el toast/voz de "el auto despega"
+
+  // patrón de asteroides/satélites dentro del corredor: t=0..1 es la posición relativa dentro del tramo,
+  // x/y en el mismo rango -1..1 que playerX/playerY. Densidad pareja con algo de variación de altura
+  // para que haga falta usar los dos ejes, no solo esquivar a los costados como en la ruta.
+  const cz = corridorStart * ROAD.SEG_LEN, cLen = SPACE_CORRIDOR * ROAD.SEG_LEN;
+  const pattern = [
+    [.10, -.5, .3, 'asteroide'], [.10, .45, -.2, 'asteroide'], [.18, 0, .6, 'satelite'],
+    [.26, -.6, -.1, 'asteroide'], [.26, .55, .35, 'asteroide'], [.33, .15, -.55, 'asteroide'],
+    [.40, -.3, .5, 'satelite'], [.40, .4, -.4, 'asteroide'], [.47, 0, 0, 'asteroide'],
+    [.54, -.55, .2, 'asteroide'], [.54, .5, -.35, 'asteroide'], [.60, -.1, -.6, 'satelite'],
+    [.66, .3, .45, 'asteroide'], [.66, -.4, -.15, 'asteroide'], [.72, 0, -.5, 'asteroide'],
+    [.78, .55, .25, 'asteroide'], [.78, -.55, -.3, 'asteroide'], [.84, .15, .55, 'satelite'],
+    [.90, -.3, -.5, 'asteroide'], [.90, .35, .4, 'asteroide'],
+  ];
+  for (const [t, x, y, kind] of pattern) spaceObstacleAt(cz + t * cLen, x, y, kind);
+}
+
 let checkpoints = [], traffic = [];
 function buildStage1(){
   // etapa estirada 3x (mismo trazado/densidad de decorado que el original, solo más largo) para que
   // dure lo pensado en el diseño en vez de terminarse en ~7s a velocidad máxima.
-  segments = []; checkpoints = []; traffic = [];
+  segments = []; checkpoints = []; traffic = []; spaceObstacles = [];
   addStraight(60);
   const HOUSES = ['casa', 'casa2', 'casa3'];
   for (let i = 2; i < 60; i += 3) decoAt(i, i % 6 ? 1 : -1, HOUSES[(i / 3) % 3 | 0]);
@@ -705,6 +866,10 @@ function buildStage1(){
   // plaza del barrio: más árboles, un cruce con perro, respiro antes de la tierra
   addStraight(90);
   for (let i = p + 2; i < p + 90; i += 3) decoAt(i, i % 5 ? 1 : -1, i % 9 < 5 ? 'arbol' : HOUSES[(i / 3) % 3 | 0]);
+  // debut del Rastrojero en asfalto llano (curve=0), más lento y con swerve más suave que sus
+  // apariciones siguientes: la primera vez en tierra+curva (más abajo) sumaba de golpe agarre
+  // reducido + curva + enemigo nuevo — acá el jugador lo conoce en el tramo más fácil posible.
+  trafficAt(p + 12, .5, .42, 'rastrojero', { swerve:true, swerveTarget:-.15, swerveDur:1.4, hitW:.27 });
   checkpointAt(p + 30);
   fuelAt(p + 45, -1, .35);
   perroAt(p + 70, 1, .45);
@@ -731,6 +896,10 @@ function buildStage1(){
   bacheAt(p + 25, 0, .25); bacheAt(p + 55, 0, -.3); bacheAt(p + 90, 0, .3);
   trafficAt(p + 70, .5, .38, 'auto_viejo'); // más lento: el terreno también los frena a ellos
   fuelAt(p + 115, 1, .3);
+  // segunda aparición del Rastrojero (canon de la serie, ver PROMPT_CAP2_SUPERABUELA.md), ya en el
+  // barrio de tierra: el jugador lo conoce del debut en asfalto de más arriba, así que acá suma el
+  // agarre reducido del terreno como escalón real de dificultad, no como sorpresa acumulada.
+  trafficAt(p + 128, .55, .48, 'rastrojero', { swerve:true, swerveTarget:-.15, swerveDur:1.2, hitW:.27 });
 
   p = segments.length;
   withTerrain('dirt', () => addCurve(190, -1.8, 0)); // curve negativo: empuja hacia positivo -> offset seguro negativo
@@ -752,8 +921,10 @@ function buildStage1(){
   p = segments.length;
   addStraight(80);
   for (let i = p + 2; i < p + 80; i += 3) decoAt(i, i % 6 ? 1 : -1, HOUSES[(i / 3) % 3 | 0]);
+  forkAt(p + 5, 18); // bifurcación falsa: franja de tierra al medio, obliga a elegir un lado y frena
   checkpointAt(p + 55);
   abuelaAt(p + 35, 1, .5);
+  camionAt(p + 62, 1, .55); // camión varado tapando gran parte del carril
 
   // chicane final: dos eses seguidas para un tramo de habilidad antes del cierre
   p = segments.length;
@@ -777,6 +948,7 @@ function buildStage1(){
   checkpointAt(p + 90);
   fuelAt(p + 150, -1, .32);
   trafficAt(p + 60, -.5, .5, 'auto_viejo', { swerve:true, swerveTarget:.25, swerveDur:1.2 });
+  trafficAt(p + 105, -.5, .5, 'rastrojero', { swerve:true, swerveTarget:.2, swerveDur:1.1, hitW:.27 });
 
   // última curva difícil (misma intensidad que antes, pero ya con mucho recorrido de práctica encima)
   p = segments.length;
@@ -791,10 +963,15 @@ function buildStage1(){
   p = segments.length;
   addStraight(140);
   for (let i = p + 2; i < p + 140; i += 3) decoAt(i, i % 6 ? 1 : -1, i % 4 ? HOUSES[(i / 3) % 3 | 0] : 'arbol2');
+  forkAt(p + 5, 20); // segunda bifurcación, ya cerca del final
   abuelaAt(p + 40, -1, .55);
   fuelAt(p + 80, 1, .35);
+  camionAt(p + 95, -1, .5);
   decoAt(p + 115, -1, 'colectivo', 1.5);
+  trafficAt(p + 128, .5, .55, 'rastrojero', { swerve:true, swerveTarget:-.2, swerveDur:1, hitW:.27 });
   addStraight(50);
+
+  addSpaceZone(); // despegue -> corredor de asteroides/satélites -> aterrizaje, justo antes de la entrega del auto
 
   trackLen = segments.length * ROAD.SEG_LEN;
 }
@@ -813,10 +990,15 @@ function project(p, camX, camY, camZ, camDepth, width, height, roadW){
 /* ---------------- estado del juego ---------------- */
 let canvas, ctx;
 let position = 0, playerX = 0, speed = 0, steerV = 0, carTilt = 0, airT = 0, airTotal = .6, bounceT = 0;
+// tramo espacial ("etapa media" del capítulo, expansión arcade — ver addSpaceZone): playerY es la
+// altura del auto (-1..1) mientras vuela, climbV es su inercia igual que steerV para el volante.
+let playerY = 0, climbV = 0, spaceWarned = false;
+let spaceObstacles = []; // {z, x, y, kind, hit, hitW, hitH} — ver spaceObstacleAt/checkSpaceObstacles
 const MAX_SPEED = ROAD.SEG_LEN * 40, ACCEL = MAX_SPEED * .95, BRAKE = -MAX_SPEED * 1.7, DECEL = -MAX_SPEED * .55, OFFROAD_DECEL = -MAX_SPEED * 1.5, OFFROAD_LIMIT = MAX_SPEED * .13;
 let keys = new Set(), stageDone = false, gameRunning = false;
 let carCanvas;
 let timeLeft = 60, score = 0, turboT = 0, turboCD = 0, invT = 0, crashT = 0, crashSpin = 0, abuelaDodges = 0, crashes = 0, nextCheckpoint = 0;
+let crashParticles = []; // restos del choque (parachoques, piezas, humo) — ver spawnCrashDebris/updateCrashDebris
 let fuel = 100, fuelWarned = false;
 let bumpT = 0; // pozo/bache: sacudida corta de cámara, no un choque completo
 const FUEL_MAX = 100, FUEL_DRAIN = 100 / 32, FUEL_REFILL = 45; // tanque lleno se vacía en ~32s a fondo: fuerza a buscar tubos sin castigar a quien maneja bien y prolijo por el centro
@@ -825,8 +1007,9 @@ const fmtTime = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) 
 function resetRun(){
   buildStage1();
   position = 0; playerX = 0; speed = 0; steerV = 0; carTilt = 0; airT = 0; airTotal = .6; bounceT = 0; stageDone = false; nextCheckpoint = 0;
+  playerY = 0; climbV = 0; spaceWarned = false;
   timeLeft = 60; score = 0; turboT = 0; turboCD = 0; invT = 0; crashT = 0; abuelaDodges = 0; crashes = 0;
-  fuel = FUEL_MAX; fuelWarned = false;
+  fuel = FUEL_MAX; fuelWarned = false; crashParticles = [];
 }
 
 function triggerCrash(){
@@ -837,6 +1020,32 @@ function triggerCrash(){
   crashT = 0.55; crashSpin = (Math.random() < .5 ? -1 : 1) * (7 + Math.random() * 4);
   speed *= .2; timeLeft = Math.max(0, timeLeft - 3); crashes++;
   SFX.crash(); toast('¡Uh! Cleto casi sale volando (-3s)');
+  spawnCrashDebris();
+}
+function spawnCrashDebris(){
+  // antes el choque solo giraba el sprite entero — acá "se rompe": parachoques, una pieza suelta y
+  // humito salen disparados y caen con gravedad, independiente del giro/escala del auto.
+  const n = 6 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++){
+    const ang = (Math.PI * 2 * i) / n + (Math.random() - .5) * .6;
+    const spd = 90 + Math.random() * 150;
+    const life = .5 + Math.random() * .4;
+    crashParticles.push({
+      x: (Math.random() - .5) * 24, y: -58 + (Math.random() - .5) * 26,
+      vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 90 - Math.random() * 70,
+      rot: Math.random() * Math.PI * 2, vrot: (Math.random() - .5) * 14,
+      life, maxLife: life, kind: i % 3, size: 6 + Math.random() * 7,
+    });
+  }
+}
+function updateCrashDebris(dt){
+  for (let i = crashParticles.length - 1; i >= 0; i--){
+    const p = crashParticles[i];
+    p.vy += 340 * dt; // gravedad cartoon
+    p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vrot * dt;
+    p.life -= dt;
+    if (p.life <= 0) crashParticles.splice(i, 1);
+  }
 }
 function triggerBump(){
   // pozo/bache: sacudón y frenada corta, pero sin girar por el aire ni perder el control — un desafío
@@ -850,6 +1059,14 @@ function checkHazards(){
   for (let n = 0; n <= 10; n++){
     const seg = segments[segIdx + n]; if (!seg) continue;
     for (const spr of seg.sprites) if (spr.abuela && !spr.warned){ spr.warned = true; if (spr.perro) SFX.honk(); else voice('cuidadosenora'); }
+  }
+  // lookahead propio (más largo que el de la abuela): a n<=10 el aviso llegaba con ~0.25s a fondo,
+  // muy por detrás de cuando el cono/tierra ya se empiezan a ver (ver SPR_VIS). Con n<=45 el toast
+  // sale en sincronía con esa aparición gradual, dando tiempo real de leerlo antes de llegar.
+  for (let n = 0; n <= 45; n++){
+    const seg = segments[segIdx + n]; if (!seg) continue;
+    if (seg.islandStart && !seg.warned){ seg.warned = true; toast('¡Se abre la ruta! Esquivá la tierra del medio'); }
+    if (seg.spaceStart && !seg.warned){ seg.warned = true; toast('¡Cleto pisa a fondo... y el auto despega!'); SFX.turbo(); }
   }
   for (let n = 0; n <= 1; n++){
     const seg = segments[segIdx + n]; if (!seg) continue;
@@ -945,24 +1162,45 @@ function updateCar(dt){
   steerV += (steerTarget - steerV) * Math.min(1, 11 * dt);
   playerX += steerV * dt;
   // tramo de tierra: menos agarre (más empuje en las curvas y derrape) — terreno nuevo, no solo cosmético.
-  const onDirt = segment.terrain === 'dirt';
+  const onIsland = segment.island === true && Math.abs(playerX) < ISLAND_HALF;
+  const onDirt = segment.terrain === 'dirt' || onIsland;
   const gripMul = onDirt ? 1.6 : 1;
   playerX -= dt * 1.15 * gripMul * segment.curve * speedPct * speedPct; // fuerza centrífuga en las curvas, más suave que antes
   if (onDirt && speedPct > .3 && Math.random() < dt * 3) SFX.skid();
   const maxSpd = turboT > 0 ? MAX_SPEED * 1.35 : MAX_SPEED;
-  if (keys.has('ArrowUp') || keys.has('KeyW')) speed += ACCEL * dt;
-  else if (keys.has('ArrowDown') || keys.has('KeyS')) speed += BRAKE * dt;
-  else speed += DECEL * dt;
-  if (keys.has('Space') && turboT <= 0 && turboCD <= 0 && speed > MAX_SPEED * .3){ turboT = 1.4; turboCD = 2.4; SFX.turbo(); }
-  const offroad = playerX < -1 || playerX > 1;
+  // tramo espacial (ver addSpaceZone): pasado el punto medio de la rampa de despegue, el avance se
+  // vuelve automático (velocidad crucero) y arriba/abajo dejan de acelerar/frenar para controlar la
+  // altura — mismo patrón de "velocidad objetivo" que ya usa el volante (steerV/playerX).
+  const flying = (segment.spaceMix || 0) > .5;
+  if (flying){
+    const SPACE_CRUISE = MAX_SPEED * .62;
+    speed += (SPACE_CRUISE - speed) * Math.min(1, dt * .8);
+    let climbInput = 0;
+    if (keys.has('ArrowUp') || keys.has('KeyW')) climbInput += 1;
+    if (keys.has('ArrowDown') || keys.has('KeyS')) climbInput -= 1;
+    climbV += (climbInput * 1.1 - climbV) * Math.min(1, 8 * dt);
+    playerY = Math.max(-1, Math.min(1, playerY + climbV * dt));
+  } else {
+    if (keys.has('ArrowUp') || keys.has('KeyW')) speed += ACCEL * dt;
+    else if (keys.has('ArrowDown') || keys.has('KeyS')) speed += BRAKE * dt;
+    else speed += DECEL * dt;
+    if (keys.has('Space') && turboT <= 0 && turboCD <= 0 && speed > MAX_SPEED * .3){ turboT = 1.4; turboCD = 2.4; SFX.turbo(); }
+    playerY += (0 - playerY) * Math.min(1, dt * 3); // por si queda algo de altura de un frame de transición
+  }
+  const offroad = !flying && (playerX < -1 || playerX > 1);
   if (offroad && speed > OFFROAD_LIMIT) speed += OFFROAD_DECEL * dt;
   // el "tirón" de vuelta al camino tiene que ser bastante más fuerte que antes (.3 -> 1.15): con el valor
   // viejo, un auto que se iba del camino en una curva y no volvía a tocar el volante quedaba pegado
   // cómodamente en la banquina, esquivando de arriba todos los obstáculos del centro sin querer. Con más
   // tirón, vuelve a cruzar el centro (donde están los obstáculos) en vez de bordear la pista gratis.
   if (offroad) playerX -= Math.sign(playerX) * dt * 1.15;
+  // tierra de la bifurcación: frena de verdad (no solo más derrape en curva, que en una franja recta
+  // no se nota), para que "se divide el camino y te baja la velocidad" se sienta aunque el fork esté
+  // en una recta sin fuerza centrífuga.
+  if (!flying && onIsland && speed > OFFROAD_LIMIT) speed += OFFROAD_DECEL * .5 * dt;
   speed = Math.max(0, Math.min(maxSpd, speed));
-  playerX = Math.max(-1.6, Math.min(1.6, playerX));
+  if (!flying) playerX = Math.max(-1.6, Math.min(1.6, playerX));
+  else playerX = Math.max(-1.3, Math.min(1.3, playerX)); // en el espacio no hay banquina, pero conviene un tope para no perder el auto de cámara
   // inclinación visual del auto: sigue al volante con resorte, da sensación de peso/agarre
   const tiltTarget = Math.max(-1, Math.min(1, steerV / 2.6)) * .16 + segment.curve * speedPct * .1;
   carTilt += (tiltTarget - carTilt) * Math.min(1, dt * 9);
@@ -973,10 +1211,19 @@ function updateCar(dt){
   checkHazards();
   checkJumps(segment);
   checkTraffic(dt);
+  if ((segment.spaceMix || 0) > 0) checkSpaceObstacles();
   if (nextCheckpoint < checkpoints.length && segment.index >= checkpoints[nextCheckpoint]){
     nextCheckpoint++; timeLeft += 15; score += 50; toast('¡Checkpoint! +15s'); SFX.check();
   }
   if (position >= trackLen){ position = trackLen - 1; if (!stageDone){ stageDone = true; speed = 0; finishRun(); } }
+}
+function checkSpaceObstacles(){
+  for (const o of spaceObstacles){
+    if (o.hit) continue;
+    if (Math.abs(o.z - position) < ROAD.SEG_LEN * 1.2 && Math.abs(playerX - o.x) < o.hitW && Math.abs(playerY - o.y) < o.hitH){
+      o.hit = true; triggerCrash(); SFX.honk();
+    }
+  }
 }
 function finishRun(){
   gameRunning = false; RADIO.stop(); ENGINE.stop(); turboT = 0;
@@ -986,7 +1233,7 @@ function finishRun(){
   $('#rMultas').textContent = crashes;
   $('#resultsBody').textContent = crashes === 0 ? 'Cleto llega entero, sin un rasguño.' : 'Cleto llega dando tumbos, pero llega.';
   hideHud();
-  show('results');
+  showHandoff();
 }
 
 function drawSegmentQuad(x1, y1, w1, x2, y2, w2, color){
@@ -995,8 +1242,8 @@ function drawSegmentQuad(x1, y1, w1, x2, y2, w2, color){
   ctx.moveTo(x1 - w1, y1); ctx.lineTo(x2 - w2, y2); ctx.lineTo(x2 + w2, y2); ctx.lineTo(x1 + w1, y1);
   ctx.closePath(); ctx.fill();
 }
-let cloudDrift = 0;
-function drawBackground(baseCurve){
+let cloudDrift = 0, starDrift = 0;
+function drawBackground(baseCurve, spaceMix){
   cloudDrift = (cloudDrift + .13) % (W + 120);
   // un poco más alto que el horizonte real para que una loma no la haga asomar un frame (costura fea)
   const skyH = H * .64;
@@ -1012,6 +1259,36 @@ function drawBackground(baseCurve){
     const px = ((cx - cloudDrift) % (W + 120) + (W + 120)) % (W + 120) - 60;
     ctx.beginPath(); ctx.ellipse(px - baseCurve*40, cy, s, s*.55, 0, 0, 7); ctx.fill(); ctx.stroke();
   }
+  // tramo espacial (ver addSpaceZone): el fondo de día se tapa de a poco con un cielo nocturno estrellado,
+  // encima de todo lo anterior, con la opacidad de spaceMix — "el escenario vaya cambiando de a poco".
+  if (spaceMix > 0) drawSpaceBackdrop(spaceMix);
+}
+function drawSpaceBackdrop(mix){
+  starDrift = (starDrift + .05) % 1000;
+  ctx.save(); ctx.globalAlpha = mix;
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#050414'); sky.addColorStop(.6, '#0c0f2e'); sky.addColorStop(1, '#1a1440');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  // estrellas: posiciones deterministas (seeded) para que no titilen recalculándose random cada frame,
+  // con un desplazamiento lento y prolijo en vez de parpadeo.
+  const rnd = seeded(7);
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < 90; i++){
+    const sx = (rnd() * (W + 200) - starDrift * (i % 3 === 0 ? 1.6 : .7)) % (W + 200);
+    const px = ((sx % (W + 200)) + (W + 200)) % (W + 200) - 100;
+    const py = rnd() * H, r = i % 7 === 0 ? 1.8 : 1;
+    ctx.globalAlpha = mix * (i % 5 === 0 ? .55 : .9);
+    ctx.beginPath(); ctx.arc(px, py, r, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = mix;
+  // planeta lejano, chato como el resto del arte "Paint" — un solo detalle, no satura el fondo.
+  const pg = ctx.createRadialGradient(W * .78 - 20, H * .22 - 15, 6, W * .78, H * .22, 46);
+  pg.addColorStop(0, '#ffb783'); pg.addColorStop(1, '#c9582f');
+  ctx.fillStyle = pg; ink(ctx, 2.5);
+  ctx.beginPath(); ctx.arc(W * .78, H * .22, 42, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.ellipse(W * .78, H * .22, 62, 14, -.3, 0, 7); ctx.stroke();
+  ctx.restore();
 }
 function groundShadow(rx, ry, oy){
   ctx.save(); ctx.globalAlpha = .3; ctx.fillStyle = '#000';
@@ -1033,6 +1310,39 @@ function drawOldCar(x, top, mid, dark){
     ctx.fillStyle = '#9aa0a4'; ctx.beginPath(); ctx.arc(wx,2,4.2,0,7); ctx.fill();
   }
   ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(-2,-10,44,7,0,0,Math.PI); ctx.fill();
+}
+// silueta de lejos: color aproximado y medio-ancho/alto locales de cada kind (para el blob de drawSpriteLOD).
+const SILH_COLOR = {
+  arbol: PAL.verdeOsc, arbol2: PAL.verdeOsc, casa: '#f0d98a', casa2: '#cfe6ee', casa3: '#a3dac0',
+  cerco: '#d8d6d2', cono: PAL.naranja, rampa: PAL.amar, bache: '#2e2a24', perro: '#8a5a2b',
+  fuel: PAL.rojo, auto_viejo: '#c9a23a', auto_r: PAL.rojo, auto_g: '#9aa0a4', colectivo: PAL.naranja,
+  camion: '#e0a83f', rastrojero: '#6b7440', checkpoint: PAL.amar, abuela: '#4a7a5c', mamaSaluda: '#f4c9d8',
+  asteroide: '#8a8580', satelite: '#c7cdd2',
+};
+const SILH_SIZE = {
+  arbol: [26, 78], arbol2: [20, 90], casa: [44, 60], casa2: [44, 54], casa3: [38, 86], cerco: [34, 30],
+  cono: [16, 38], rampa: [18, 34], bache: [20, 10], perro: [20, 20], fuel: [18, 54],
+  auto_viejo: [42, 36], auto_r: [42, 36], auto_g: [42, 36], colectivo: [64, 70],
+  camion: [70, 74], rastrojero: [42, 44], checkpoint: [6, 96], abuela: [26, 118], mamaSaluda: [40, 168],
+  asteroide: [30, 30], satelite: [40, 24],
+};
+// bajo esta cantidad de píxeles de medio-ancho, el detalle del sprite (rejillas de ventana, rayos de
+// rueda, listones de caja) queda por debajo del píxel y el antialiasing de cada línea fina titila de
+// un frame a otro al moverse la cámara. Un blob sólido sin trazo no tiene ese problema: se dibuja a
+// distancia con la silueta y recién se cambia al sprite detallado cuando ya mide lo suficiente.
+const DETAIL_PX = 15;
+function drawSilhouette(kind, sx, sy, sc, alpha){
+  const wh = SILH_SIZE[kind] || [20, 40];
+  const rx = Math.max(.5, sc * wh[0]), ry = Math.max(.5, sc * wh[1] * .5);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = SILH_COLOR[kind] || '#8a8a86';
+  ctx.beginPath(); ctx.ellipse(sx, sy - ry, rx, ry, 0, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function drawSpriteLOD(kind, sx, sy, sc, side, alpha){
+  const wh = SILH_SIZE[kind] || [20, 40];
+  if (sc * wh[0] < DETAIL_PX){ drawSilhouette(kind, sx, sy, sc, alpha); return; }
+  if (alpha < 1){ ctx.save(); ctx.globalAlpha = alpha; drawDeco(kind, sx, sy, sc, side); ctx.restore(); }
+  else drawDeco(kind, sx, sy, sc, side);
 }
 function drawDeco(kind, x, y, scale, side){
   ctx.save(); ctx.translate(x, y); ctx.scale(scale * side, scale);
@@ -1181,6 +1491,75 @@ function drawDeco(kind, x, y, scale, side){
       ctx.fillStyle = '#141414'; ctx.beginPath(); ctx.arc(wx,-4,12,0,7); ctx.fill(); ink(ctx,2.4); ctx.stroke();
       ctx.fillStyle = '#9aa0a4'; ctx.beginPath(); ctx.arc(wx,-4,5,0,7); ctx.fill();
     }
+  } else if (kind === 'camion'){
+    // camión varado atravesado en el carril (obstáculo nuevo, ver camionAt): la caja tapa gran parte
+    // del ancho, con baliza intermitente para que se lea como "en pana", no circulando.
+    groundShadow(78, 11, 1);
+    const cab = ctx.createLinearGradient(0,-86,0,-30); cab.addColorStop(0,'#e8e4da'); cab.addColorStop(1,'#c7c2b6');
+    ctx.fillStyle = cab; ink(ctx, 4);
+    ctx.beginPath(); ctx.moveTo(-70,0); ctx.lineTo(-66,-40); ctx.quadraticCurveTo(-60,-60,-30,-62); ctx.lineTo(-30,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    const cabWin = ctx.createLinearGradient(-58,-56,-34,-40); cabWin.addColorStop(0,'#d9f2fb'); cabWin.addColorStop(1,PAL.celeste);
+    ctx.fillStyle = cabWin; ink(ctx,2.6); ctx.fillRect(-58,-56,22,16); ctx.strokeRect(-58,-56,22,16);
+    const box = ctx.createLinearGradient(0,-74,0,0); box.addColorStop(0,'#ffd27a'); box.addColorStop(1,'#e0a83f');
+    ctx.fillStyle = box; ink(ctx, 4);
+    ctx.fillRect(-28,-74,98,74); ctx.strokeRect(-28,-74,98,74);
+    ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2;
+    for (const lx of [-8,12,32,52,72]){ ctx.beginPath(); ctx.moveTo(lx,-74); ctx.lineTo(lx,0); ctx.stroke(); }
+    for (const wx of [-52,-8,46]){
+      ctx.fillStyle = '#141414'; ctx.beginPath(); ctx.arc(wx,4,13,0,7); ctx.fill(); ink(ctx,2.6); ctx.stroke();
+      ctx.fillStyle = '#9aa0a4'; ctx.beginPath(); ctx.arc(wx,4,5.5,0,7); ctx.fill();
+    }
+    ctx.fillStyle = Math.floor(performance.now()/260)%2===0 ? PAL.naranja : '#a85a10';
+    ctx.beginPath(); ctx.arc(-48,-64,6,0,7); ctx.fill(); ink(ctx,2); ctx.stroke();
+  } else if (kind === 'rastrojero'){
+    // Rastrojero canon de la serie (assets/prompts/PROMPT_CAP2_SUPERABUELA.md): verde oliva, caja de
+    // madera, motor fumando. Se usa como tráfico (trafficAt con swerve) para que se cruce de carril y
+    // embista, no como decorado fijo.
+    groundShadow(46, 9, 1);
+    const puff = (Math.sin(performance.now()/140) + 1) / 2;
+    ctx.save(); ctx.fillStyle = '#8a9088';
+    for (let k = 0; k < 3; k++){
+      ctx.globalAlpha = .38 * (1 - k*.22) * (1 - puff*.3);
+      const py = -6 - k*14 - puff*10, r = 6 + k*4 + puff*3;
+      ctx.beginPath(); ctx.arc(-34 - k*5, py, r, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+    const cab = ctx.createLinearGradient(-40,-46,-40,0); cab.addColorStop(0,'#8f9a5a'); cab.addColorStop(1,'#6b7440');
+    ctx.fillStyle = cab; ink(ctx, 3);
+    ctx.beginPath(); ctx.moveTo(-40,0); ctx.lineTo(-36,-24); ctx.quadraticCurveTo(-20,-40,4,-38); ctx.lineTo(10,-4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#bfe6f5'; ink(ctx,2.4);
+    ctx.beginPath(); ctx.moveTo(-28,-26); ctx.quadraticCurveTo(-14,-36,0,-34); ctx.lineTo(-4,-20); ctx.lineTo(-24,-18); ctx.closePath(); ctx.fill(); ctx.stroke();
+    const box = ctx.createLinearGradient(0,-44,0,0); box.addColorStop(0,'#a9793f'); box.addColorStop(1,'#7c5427');
+    ctx.fillStyle = box; ink(ctx,3);
+    ctx.fillRect(8,-44,34,44); ctx.strokeRect(8,-44,34,44);
+    ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 2;
+    for (const lx of [16,24,32]){ ctx.beginPath(); ctx.moveTo(lx,-44); ctx.lineTo(lx,0); ctx.stroke(); }
+    for (const wx of [-22, 26]){
+      ctx.fillStyle = '#141414'; ctx.beginPath(); ctx.arc(wx,2,10,0,7); ctx.fill(); ink(ctx,2); ctx.stroke();
+      ctx.fillStyle = '#9aa0a4'; ctx.beginPath(); ctx.arc(wx,2,4.2,0,7); ctx.fill();
+    }
+  } else if (kind === 'asteroide'){
+    // roca irregular estilo Paint: polígono con vértices fijos (no random cada frame, para que no titile)
+    // más un par de cráteres planos.
+    const rg = ctx.createRadialGradient(-8, -10, 3, 0, 0, 30); rg.addColorStop(0, '#a29b8f'); rg.addColorStop(1, '#6b655c');
+    ctx.fillStyle = rg; ink(ctx, 3);
+    ctx.beginPath();
+    ctx.moveTo(-26, -4); ctx.lineTo(-16, -22); ctx.lineTo(2, -28); ctx.lineTo(20, -18);
+    ctx.lineTo(27, 2); ctx.lineTo(14, 18); ctx.lineTo(-10, 20); ctx.lineTo(-24, 10);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    ctx.beginPath(); ctx.arc(-6, -6, 6, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(10, 6, 4, 0, 7); ctx.fill();
+  } else if (kind === 'satelite'){
+    // satélite chico: cuerpo + dos paneles solares, antena — silueta legible aun chica.
+    ctx.fillStyle = '#d7dbde'; ink(ctx, 2.6);
+    rr(ctx, -9, -10, 18, 20, 3); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#6ec6f2'; ink(ctx, 2);
+    for (const sx of [-34, 14]){ rr(ctx, sx, -8, 20, 16, 2); ctx.fill(); ctx.stroke(); }
+    ctx.strokeStyle = INK; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(-9, -8); ctx.lineTo(-14, -8); ctx.moveTo(9, -8); ctx.lineTo(14, -8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(4, -22); ctx.stroke();
+    ctx.fillStyle = PAL.rojo; ctx.beginPath(); ctx.arc(4, -22, 2.4, 0, 7); ctx.fill();
   } else if (kind === 'checkpoint'){
     groundShadow(14, 4, 3);
     ctx.strokeStyle = '#8a5a2b'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(0,4); ctx.lineTo(0,-96); ctx.stroke();
@@ -1205,7 +1584,8 @@ function render(){
   const baseSegment = findSegment(position);
   const basePercent = (position % ROAD.SEG_LEN) / ROAD.SEG_LEN;
   const playerSegment = baseSegment;
-  drawBackground(playerSegment.curve);
+  const spaceMix = baseSegment.spaceMix || 0;
+  drawBackground(playerSegment.curve, spaceMix);
 
   let x = 0, dx = -(playerSegment.curve * basePercent), maxy = H;
   const camHeight = CAM.HEIGHT + (baseSegment.p1.world.y);
@@ -1220,18 +1600,30 @@ function render(){
     segment.clip = maxy;
     if (segment.p1.camera.z <= CAM.DEPTH) continue;
     if (segment.p2.screen.y >= maxy) continue;
-    const isDirt = segment.terrain === 'dirt';
-    const grass = segment.dark ? PAL.verdeOsc : PAL.verde;
-    const veredaC = isDirt ? (segment.dark ? PAL.banquinaOsc : PAL.banquina) : (segment.dark ? PAL.veredaOsc : PAL.vereda);
-    const rumbleC = isDirt ? (segment.dark ? PAL.tierraOsc : PAL.tierra) : (segment.dark ? '#fefefc' : PAL.rojo);
-    const roadC = isDirt ? (segment.dark ? PAL.tierraOsc : PAL.tierra) : (segment.dark ? PAL.asfaltoOsc : PAL.asfalto);
-    drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, W, segment.p2.screen.x, segment.p2.screen.y, W, grass);
-    drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w * 1.55, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w * 1.55, veredaC);
-    drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w * 1.15, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w * 1.15, rumbleC);
-    drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w, roadC);
-    if (!segment.dark && !isDirt){
-      const lw1 = Math.min(segment.p1.screen.w * .04, 10), lw2 = Math.min(segment.p2.screen.w * .04, 10);
-      drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, lw1, segment.p2.screen.x, segment.p2.screen.y, lw2, '#fefefc');
+    // tramo espacial: la ruta se desvanece de a poco en vez de cortarse (ver segment.spaceMix en
+    // addSpaceZone) — "el escenario vaya cambiando de a poco" que pidió el diseñador.
+    const roadAlpha = 1 - (segment.spaceMix || 0);
+    if (roadAlpha > .01){
+      if (roadAlpha < 1){ ctx.save(); ctx.globalAlpha = roadAlpha; }
+      const isDirt = segment.terrain === 'dirt';
+      const grass = segment.dark ? PAL.verdeOsc : PAL.verde;
+      const veredaC = isDirt ? (segment.dark ? PAL.banquinaOsc : PAL.banquina) : (segment.dark ? PAL.veredaOsc : PAL.vereda);
+      const rumbleC = isDirt ? (segment.dark ? PAL.tierraOsc : PAL.tierra) : (segment.dark ? '#fefefc' : PAL.rojo);
+      const roadC = isDirt ? (segment.dark ? PAL.tierraOsc : PAL.tierra) : (segment.dark ? PAL.asfaltoOsc : PAL.asfalto);
+      drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, W, segment.p2.screen.x, segment.p2.screen.y, W, grass);
+      drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w * 1.55, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w * 1.55, veredaC);
+      drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w * 1.15, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w * 1.15, rumbleC);
+      drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, segment.p1.screen.w, segment.p2.screen.x, segment.p2.screen.y, segment.p2.screen.w, roadC);
+      if (!segment.dark && !isDirt){
+        const lw1 = Math.min(segment.p1.screen.w * .04, 10), lw2 = Math.min(segment.p2.screen.w * .04, 10);
+        drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, lw1, segment.p2.screen.x, segment.p2.screen.y, lw2, '#fefefc');
+      }
+      if (segment.island){
+        // franja de tierra al medio de la bifurcación (ver forkAt): angosta, deja los dos lados libres.
+        const iw1 = segment.p1.screen.w * ISLAND_HALF, iw2 = segment.p2.screen.w * ISLAND_HALF;
+        drawSegmentQuad(segment.p1.screen.x, segment.p1.screen.y, iw1, segment.p2.screen.x, segment.p2.screen.y, iw2, segment.dark ? PAL.tierraOsc : PAL.tierra);
+      }
+      if (roadAlpha < 1) ctx.restore();
     }
     maxy = segment.p2.screen.y;
     toDraw.push(segment);
@@ -1245,17 +1637,37 @@ function render(){
       // nota: segment.clip queda casi igual a sy en terreno llano (mismo punto físico que el borde lejano
       // del segmento anterior), así que compararlos con "<" estricto descartaba casi todos los sprites.
       // el propio chequeo de oclusión del segmento (p2.screen.y >= maxy) ya filtró lo que está detrás de una loma.
-      // umbral bajo a propósito: con uno alto (ej. 0.0006) el decorado y los obstáculos recién aparecían a
-      // ~5 segmentos del auto (una fracción de segundo a fondo), invisibles hasta último momento. Con este
-      // umbral se empiezan a ver creciendo desde bastante antes, dando tiempo real a reaccionar.
-      if (scale > 0.00012) drawDeco(spr.kind, sx, sy, scale * 3400, spr.side);
+      // umbral bajado 4x (antes 0.00012, visible recién a ~26 segmentos = menos de 1s a fondo, "aparece de
+      // golpe") y con fundido de opacidad en vez de aparición abrupta: ahora se empieza a ver desde ~106
+      // segmentos (~2.6s a fondo) y llega a opacidad completa de forma gradual, no de un frame al otro.
+      // drawSpriteLOD decide silueta lisa vs. sprite con detalle (ver DETAIL_PX) para que esa aparición
+      // gradual no titile: a esta distancia el sprite detallado por sí solo ya shimmereaba.
+      if (scale > SPR_VIS){
+        const a = scale < SPR_FADE_END ? (scale - SPR_VIS) / (SPR_FADE_END - SPR_VIS) : 1;
+        drawSpriteLOD(spr.kind, sx, sy, scale * 3400, spr.side, a);
+      }
     }
     for (const t of traffic){
       if (Math.floor(t.z / ROAD.SEG_LEN) !== segment.index) continue;
       const scale = segment.p1.screen.scale;
       const sx = segment.p1.screen.x + t.x * segment.p1.screen.w;
       const sy = segment.p1.screen.y;
-      if (scale > 0.00012) drawDeco(t.kind, sx, sy, scale * 3400, 1);
+      if (scale > SPR_VIS){
+        const a = scale < SPR_FADE_END ? (scale - SPR_VIS) / (SPR_FADE_END - SPR_VIS) : 1;
+        drawSpriteLOD(t.kind, sx, sy, scale * 3400, 1, a);
+      }
+    }
+    // asteroides/satélites del tramo espacial: mismo esquema que sprites/tráfico (posición por segmento,
+    // LOD/fundido), pero con un desplazamiento vertical extra por su altura `.y` (ver spaceObstacleAt).
+    for (const o of spaceObstacles){
+      if (Math.floor(o.z / ROAD.SEG_LEN) !== segment.index) continue;
+      const scale = segment.p1.screen.scale;
+      const sx = segment.p1.screen.x + o.x * segment.p1.screen.w;
+      const sy = segment.p1.screen.y - o.y * segment.p1.screen.w * .9;
+      if (scale > SPR_VIS){
+        const a = scale < SPR_FADE_END ? (scale - SPR_VIS) / (SPR_FADE_END - SPR_VIS) : 1;
+        drawSpriteLOD(o.kind, sx, sy, scale * 3400, 1, a);
+      }
     }
   }
   // líneas de velocidad a los costados: refuerzan la sensación de ir a fondo, típico arcade
@@ -1293,24 +1705,60 @@ function render(){
   // de la ruta/horizonte que ya se venía renderizando arriba — "no veo lo que hay adelante" no era la
   // cámara, era el auto tapando la vista. Con esto queda más lugar arriba para ver venir la ruta.
   const carGroundY = H - 30, carScale = 0.68;
-  groundShadowAt(W/2 + playerX*40, carGroundY + 7, 52 * (1 - jumpArc*.4), 9 * (1 - jumpArc*.6), .4 - jumpArc*.2);
+  // en vuelo el auto sube en pantalla (flyOffsetY) pero esta sombra de contacto queda anclada al piso
+  // fijo (carGroundY) donde ya no hay nada dibujado (roadAlpha≈0, solo estrellas) — sin el *(1-spaceMix)
+  // quedaba una elipse negra flotando sola, separada del auto, sin piso debajo.
+  groundShadowAt(W/2 + playerX*40, carGroundY + 7, 52 * (1 - jumpArc*.4), 9 * (1 - jumpArc*.6), (.4 - jumpArc*.2) * (1 - spaceMix));
   const bumpShake = bumpT > 0 ? Math.sin(bumpT * 90) * bumpT * 7 : 0;
-  ctx.translate(W/2 + playerX*40, carGroundY - bounce - jumpArc*46 + bumpShake);
+  // tramo espacial: playerY (altura, -1..1) mueve al auto en pantalla; con spaceMix como factor entra y
+  // sale de a poco al mismo tiempo que cambia el fondo (drawBackground), no de golpe al cruzar la línea.
+  const flyOffsetY = -playerY * 70 * spaceMix;
+  ctx.translate(W/2 + playerX*40, carGroundY - bounce - jumpArc*46 + bumpShake + flyOffsetY);
+  // restos del choque: en el mismo origen que el auto pero SIN su rotate/scale, para que vuelen rectos
+  // en pantalla en vez de girar pegados al sprite.
+  for (const p of crashParticles){
+    const a = Math.max(0, p.life / p.maxLife);
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = a;
+    if (p.kind === 2){
+      ctx.fillStyle = 'rgba(110,108,104,' + (a * .5) + ')';
+      ctx.beginPath(); ctx.arc(0, 0, p.size * (1.6 - a * .6), 0, 7); ctx.fill();
+    } else if (p.kind === 1){
+      ctx.fillStyle = '#5c6266'; ink(ctx, 1.6);
+      ctx.beginPath(); ctx.arc(0, 0, p.size * .5, 0, 7); ctx.fill(); ctx.stroke();
+    } else {
+      ctx.fillStyle = PAL.azul; ink(ctx, 1.8);
+      ctx.fillRect(-p.size, -p.size * .4, p.size * 2, p.size * .8); ctx.strokeRect(-p.size, -p.size * .4, p.size * 2, p.size * .8);
+    }
+    ctx.restore();
+  }
   ctx.rotate(carTilt);
   ctx.scale(carScale, carScale);
   if (jumpArc > 0) ctx.scale(1 + jumpArc*.08, 1 + jumpArc*.1);
-  if (turboT > 0){
+  if (turboT > 0 || spaceMix > .3){
+    // en vuelo el "turbo" queda siempre prendido y más parejo (motor a crucero), no a los saltos del
+    // turbo de nafta en ruta — por eso la llama es más chica/estable cuando es solo spaceMix.
+    // la variación de largo en vuelo se acota más (rndMul) que en el turbo de nafta: si usa el mismo
+    // Math.random()*len de siempre, aunque la llama sea más chica tiembla igual de nervioso y no se lee
+    // como "motor a crucero parejo" — la idea es que tiemble menos, no solo que sea menor.
+    const flameK = turboT > 0 ? 1 : .55 * spaceMix, spread = 10 * flameK, len = 20 * flameK, rndMul = turboT > 0 ? 1 : .4;
     for (const ox of [-46, 46]){
       ctx.fillStyle = Math.random() < .5 ? '#ffb020' : '#ff5a1e';
-      ctx.beginPath(); ctx.moveTo(ox, 8); ctx.lineTo(ox - 10, 28 + Math.random()*20); ctx.lineTo(ox + 10, 28 + Math.random()*20); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(ox, 8); ctx.lineTo(ox - spread, 8 + len + Math.random() * len * rndMul); ctx.lineTo(ox + spread, 8 + len + Math.random() * len * rndMul); ctx.closePath(); ctx.fill();
     }
   }
-  const offroadNow = playerX < -1 || playerX > 1;
+  const offroadNow = spaceMix < .5 && (playerX < -1 || playerX > 1);
   if (offroadNow && speed > OFFROAD_LIMIT){
     ctx.fillStyle = 'rgba(140,120,95,.5)';
     for (const ox of [-40, 40]){ ctx.beginPath(); ctx.ellipse(ox + (Math.random()-.5)*12, 20 + Math.random()*10, 10 + Math.random()*8, 7, 0, 0, 7); ctx.fill(); }
   }
-  if (crashT > 0){ ctx.rotate(crashSpin * crashT * 2); ctx.scale(1 + Math.sin(crashT*30)*.05, 1); }
+  if (crashT > 0){
+    // antes era un wobble de ±5%: casi no se leía como impacto. Esto aplasta el auto con fuerza justo
+    // al chocar (hasta ±22%) y lo deja rebotar/apagarse, sumado al giro cartoon que ya había.
+    const p = 1 - crashT / 0.55;
+    const squash = Math.exp(-p * 5) * Math.sin(p * 18) * .22;
+    ctx.rotate(crashSpin * crashT * 2);
+    ctx.scale(1 + squash, 1 - squash);
+  }
   else if (invT > 0 && Math.floor(invT * 12) % 2) ctx.globalAlpha = .35;
   ctx.drawImage(carCanvas, -110, -160, 220, 170);
   // el glow tiene que dibujarse en el mismo espacio local que el auto (drawImage lo corrió a -110,-160): sin este
@@ -1337,6 +1785,7 @@ function groundShadowAt(x, y, rx, ry, alpha){
 function loop(ts){
   const dt = Math.min(1/30, (loop._last ? (ts - loop._last) : 16) / 1000); loop._last = ts;
   updateCar(dt);
+  updateCrashDebris(dt);
   if (canvas) render();
   updateHud();
   requestAnimationFrame(loop);
@@ -1346,7 +1795,16 @@ function updateHud(){
   $('#chipRadio').textContent = '♪ ' + RADIO_NAMES[RADIO.station()];
   $('#chipTime').textContent = fmtTime(timeLeft);
   $('#chipTime').classList.toggle('warn', timeLeft < 10);
-  $('#chipStage').textContent = 'Etapa 1/5 · ' + score + ' pts';
+  // tramo espacial: arriba/abajo cambian de función (acelerar/frenar -> subir/bajar), así que el chip
+  // y la ayuda de teclas tienen que avisarlo, no solo la física (ver updateCar/flying).
+  const flyingNow = (findSegment(position).spaceMix || 0) > .5;
+  $('#chipStage').textContent = (flyingNow ? 'Tramo espacial' : 'Etapa 1/5') + ' · ' + score + ' pts';
+  // los botones táctiles siguen mandando ArrowUp/ArrowDown (bindTouchBtn), que en vuelo pasan a ser
+  // subir/bajar en vez de acelerar/frenar — si el texto no cambia, en celular no hay forma de saberlo.
+  $('#tGas').textContent = flyingNow ? 'Subir' : 'Acelerar'; $('#tBrake').textContent = flyingNow ? 'Bajar' : 'Frenar';
+  $('#help').innerHTML = flyingNow
+    ? '<kbd>←</kbd><kbd>→</kbd> izquierda/derecha · <kbd>↑</kbd> subir · <kbd>↓</kbd> bajar · <kbd>Esc</kbd> pausa'
+    : '<kbd>←</kbd><kbd>→</kbd> volante · <kbd>↑</kbd> acelerar · <kbd>↓</kbd> frenar · <kbd>Espacio</kbd> turbo · <kbd>M</kbd> radio · <kbd>Esc</kbd> pausa';
   const fuelPct = Math.max(0, fuel / FUEL_MAX * 100);
   $('#fuelFill').style.width = fuelPct + '%';
   $('#fuelBar').classList.toggle('low', fuelPct < 25);
@@ -1411,6 +1869,7 @@ $('#resume').addEventListener('click', () => { hideAll(); showHud(); gameRunning
 $('#restart').addEventListener('click', () => { hideAll(); startRace(); });
 for (const id of ['#toMenu','#toMenu2','#toMenu3']) $(id).addEventListener('click', () => location.href = 'cleto3d.html');
 $('#again').addEventListener('click', () => { hideAll(); startRace(); });
+$('#handoffGo').addEventListener('click', () => show('results'));
 $('#cont').addEventListener('click', () => { hideAll(); startRace(); });
 $('#muteBtn').addEventListener('click', () => { muted = !muted; $('#muteBtn').textContent = muted ? '×' : '♪'; RADIO.mute(muted); });
 $('#pauseBtn').addEventListener('click', () => gameRunning ? pauseGame() : null);
