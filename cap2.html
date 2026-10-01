@@ -1333,14 +1333,28 @@ const SILH_SHAPE = {
 // un frame a otro al moverse la cámara. Un blob sólido sin trazo no tiene ese problema: se dibuja a
 // distancia con la silueta y recién se cambia al sprite detallado cuando ya mide lo suficiente.
 const DETAIL_PX = 15;
+// SPR_FADE_END (más abajo) era un único umbral de escala para TODOS los kinds por igual, pero la
+// escala a la que un objeto cruza DETAIL_PX depende de su propio medio-ancho (wh[0]): para un objeto
+// grande (auto wh=42, colectivo 64, camión 70) ese cruce pasaba ANTES de llegar a SPR_FADE_END, así
+// que nunca se veía la silueta opaca — pasaba de medio transparente (30-68%) directo al sprite
+// detallado, un "pop" fantasma en vez de una silueta sólida legible. Con un fade-end propio por kind
+// (una fracción fija de la escala a la que ese kind cruza DETAIL_PX) todos llegan a opacidad completa
+// con margen antes del cambio, chicos y grandes por igual.
+const SPR_FADE_END_BY_KIND = {};
+for (const k in SILH_SIZE) SPR_FADE_END_BY_KIND[k] = (DETAIL_PX / (3400 * SILH_SIZE[k][0])) * .55;
 function drawSilhouette(kind, sx, sy, sc, alpha){
   const wh = SILH_SIZE[kind] || [20, 40];
   const rx = Math.max(.5, sc * wh[0]), ry = Math.max(.5, sc * wh[1] * .5);
   const shape = SILH_SHAPE[kind]; // sin entrada -> óvalo (bache/perro/asteroide/satelite ya leen bien así)
   ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = SILH_COLOR[kind] || '#8a8a86';
   if (shape === 'veh'){
+    // un solo rectángulo redondeado se leía como "rectángulo", no como auto. Una banda oscura de
+    // parabrisas arriba (2do fill sólido, sin trazo fino → no reintroduce el titileo que tenía el
+    // detalle completo a esta distancia) alcanza para que se lea como vehículo visto de atrás.
     const w = rx * 2, h = ry * 1.3;
     rr(ctx, sx - rx, sy - h, w, h, Math.min(rx, h) * .3); ctx.fill();
+    ctx.fillStyle = 'rgba(20,20,20,.55)';
+    rr(ctx, sx - rx * .62, sy - h * .92, rx * 1.24, h * .38, Math.min(rx, h) * .15); ctx.fill();
   } else if (shape === 'house'){
     const h = ry * 1.6, top = sy - h;
     ctx.fillRect(sx - rx, top + h * .3, rx * 2, h * .7);
@@ -1694,7 +1708,8 @@ function render(){
       // drawSpriteLOD decide silueta lisa vs. sprite con detalle (ver DETAIL_PX) para que esa aparición
       // gradual no titile: a esta distancia el sprite detallado por sí solo ya shimmereaba.
       if (scale > SPR_VIS){
-        const a = scale < SPR_FADE_END ? (scale - SPR_VIS) / (SPR_FADE_END - SPR_VIS) : 1;
+        const fadeEnd = SPR_FADE_END_BY_KIND[spr.kind] || SPR_FADE_END;
+        const a = scale < fadeEnd ? (scale - SPR_VIS) / (fadeEnd - SPR_VIS) : 1;
         drawSpriteLOD(spr.kind, sx, sy, scale * 3400, spr.side, a);
       }
     }
@@ -1704,7 +1719,8 @@ function render(){
       const sx = segment.p1.screen.x + t.x * segment.p1.screen.w;
       const sy = segment.p1.screen.y;
       if (scale > SPR_VIS){
-        const a = scale < SPR_FADE_END ? (scale - SPR_VIS) / (SPR_FADE_END - SPR_VIS) : 1;
+        const fadeEnd = SPR_FADE_END_BY_KIND[t.kind] || SPR_FADE_END;
+        const a = scale < fadeEnd ? (scale - SPR_VIS) / (fadeEnd - SPR_VIS) : 1;
         drawSpriteLOD(t.kind, sx, sy, scale * 3400, 1, a);
       }
     }
@@ -1716,7 +1732,8 @@ function render(){
       const sx = segment.p1.screen.x + o.x * segment.p1.screen.w;
       const sy = segment.p1.screen.y - o.y * segment.p1.screen.w * .9;
       if (scale > SPR_VIS){
-        const a = scale < SPR_FADE_END ? (scale - SPR_VIS) / (SPR_FADE_END - SPR_VIS) : 1;
+        const fadeEnd = SPR_FADE_END_BY_KIND[o.kind] || SPR_FADE_END;
+        const a = scale < fadeEnd ? (scale - SPR_VIS) / (fadeEnd - SPR_VIS) : 1;
         drawSpriteLOD(o.kind, sx, sy, scale * 3400, 1, a);
       }
     }
@@ -1907,7 +1924,13 @@ function hideHud(){ $('#hud').hidden = $('#hudR').hidden = $('#tr').hidden = $('
 
 /* ---------------- input ---------------- */
 const isTouch = matchMedia('(pointer:coarse)').matches;
+// sin preventDefault, el navegador también procesaba estas teclas "de fábrica": Espacio/flechas hacen
+// scroll de página, y Espacio o Enter además disparan un click en el <button> que haya quedado con
+// foco (por ejemplo el de silenciar, si fue lo último que tocaste) — eso era el "el sonido se activa
+// solo": cada Espacio de turbo re-clickeaba el botón de mute que seguía enfocado, no un bug de audio.
+const GAME_KEYS = new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD']);
 window.addEventListener('keydown', e => {
+  if (GAME_KEYS.has(e.code)) e.preventDefault();
   keys.add(e.code);
   if (e.code === 'KeyM' && gameRunning){ RADIO.setStation(RADIO.station()+1); SFX.click(); }
   if ((e.code === 'Escape' || e.code === 'KeyP') && gameRunning){ pauseGame(); }
