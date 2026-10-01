@@ -778,7 +778,7 @@ function buildStage1(){
   // ahí es donde el manejo se sentía "imposible" (confirmado con pruebas: es donde más se pierde el control).
   addCurve(150, -2, .6);
   for (let i = 180; i < 330; i += 3){ decoAt(i, i % 8 ? 1 : -1, HOUSES[(i / 3) % 3 | 0]); if (i % 11 === 3) decoAt(i, -1, 'cerco'); }
-  trafficAt(258, -.5, .55, 'auto_viejo');
+  trafficAt(258, -.5, .91, 'auto_viejo');
   // curve=-3 en este tramo empuja playerX hacia positivo; offset negativo = del lado contrario (seguro).
   obstacleAt(270, 0, 'cono', -.35, .15); obstacleAt(273, 0, 'cono', -.15, .15);
   decoAt(285, -1, 'colectivo', 1.5);
@@ -789,7 +789,7 @@ function buildStage1(){
   abuelaAt(402, 1, .5);
   obstacleAt(420, 0, 'cono', .4, .15);
   jumpAt(415);
-  trafficAt(430, .5, .5, 'auto_r', { swerve:true, swerveTarget:-.2, swerveDur:1.3 });
+  trafficAt(430, .5, .88, 'auto_r', { swerve:true, swerveTarget:-.2, swerveDur:1.3 });
   fuelAt(460, 1, .32);
   addStraight(60);
   addSCurve(180, 2.6);
@@ -799,22 +799,22 @@ function buildStage1(){
   // Mismo criterio que 102/105: el offset va del lado contrario al empuje de la curva.
   obstacleAt(516, 0, 'cono', -.3, .15); obstacleAt(534, 0, 'cono', .35, .15); obstacleAt(552, 0, 'cono', .4, .15);
   abuelaAt(594, -1, .5);
-  trafficAt(560, -.5, .48, 'auto_g');
+  trafficAt(560, -.5, .87, 'auto_g');
   obstacleAt(660, 0, 'cono', -.4, .15); // curve=-2.6 acá empuja hacia positivo; offset negativo, del lado seguro
-  trafficAt(760, -.5, .5, 'auto_g');
+  trafficAt(760, -.5, .88, 'auto_g');
   addHill(90, -1.2);
   checkpointAt(645);
   jumpAt(745);
   abuelaAt(750, -1, .55);
   addStraight(90);
   for (let i = 654; i < 744; i += 3) decoAt(i, i % 6 ? 1 : -1, i % 8 === 0 ? 'arbol2' : i % 4 ? HOUSES[(i / 3) % 3 | 0] : 'arbol');
-  trafficAt(700, .55, .5, 'auto_viejo', { swerve:true, swerveTarget:-.25, swerveDur:1.1 });
+  trafficAt(700, .55, .88, 'auto_viejo', { swerve:true, swerveTarget:-.25, swerveDur:1.1 });
   fuelAt(820, -1, .35);
   checkpointAt(850);
-  trafficAt(840, -.55, .52, 'auto_r');
+  trafficAt(840, -.55, .89, 'auto_r');
   addCurve(120, 3, 0);
   obstacleAt(950, 0, 'cono', .3, .15); // curve=3 en este tramo empuja hacia negativo; mismo criterio que arriba
-  trafficAt(960, .5, .58, 'auto_g', { swerve:true, swerveTarget:0, swerveDur:1 });
+  trafficAt(960, .5, .92, 'auto_g', { swerve:true, swerveTarget:0, swerveDur:1 });
   fuelAt(990, -1, .32);
   abuelaAt(1000, 1, .5);
   addStraight(60);
@@ -832,7 +832,7 @@ function buildStage1(){
   // debut del Rastrojero en asfalto llano (curve=0), más lento y con swerve más suave que sus
   // apariciones siguientes: la primera vez en tierra+curva (más abajo) sumaba de golpe agarre
   // reducido + curva + enemigo nuevo — acá el jugador lo conoce en el tramo más fácil posible.
-  trafficAt(p + 12, .5, .42, 'rastrojero', { swerve:true, swerveTarget:-.15, swerveDur:1.4, hitW:.27 });
+  trafficAt(p + 12, .5, .84, 'rastrojero', { swerve:true, swerveTarget:-.15, swerveDur:1.4, hitW:.27 });
   checkpointAt(p + 30);
   fuelAt(p + 45, -1, .35);
   contenedorAt(p + 55, -1, .4);
@@ -846,7 +846,7 @@ function buildStage1(){
   addSCurve(220, 2.2); // primera mitad curve=+2.2 empuja hacia negativo (offset seguro positivo); segunda mitad al revés
   for (let i = p; i < p + 220; i += 3) decoAt(i, i % 7 ? -1 : 1, i % 10 < 5 ? 'arbol2' : 'cerco');
   obstacleAt(p + 30, 0, 'cono', .35, .15); obstacleAt(p + 55, 0, 'cono', .3, .15);
-  trafficAt(p + 90, -.5, .5, 'auto_r', { swerve:true, swerveTarget:.2, swerveDur:1.2 });
+  trafficAt(p + 90, -.5, .88, 'auto_r', { swerve:true, swerveTarget:.2, swerveDur:1.2 });
   obstacleAt(p + 150, 0, 'cono', -.35, .15); obstacleAt(p + 175, 0, 'cono', -.3, .15);
   abuelaAt(p + 200, -1, .5);
 
@@ -855,19 +855,19 @@ function buildStage1(){
   jumpAt(p + 60);
   for (let i = p; i < p + 140; i += 3) decoAt(i, i % 6 ? -1 : 1, 'arbol2');
   checkpointAt(p + 120);
-  trafficAt(p + 100, .5, .5, 'auto_g');
+  trafficAt(p + 100, .5, .88, 'auto_g');
 
   // entra a la calle de tierra: terreno nuevo (menos agarre, colores propios) con baches en vez de conos.
   p = segments.length;
   withTerrain('dirt', () => addStraight(140));
   for (let i = p + 2; i < p + 140; i += 4) decoAt(i, -1, 'cerco');
   bacheAt(p + 25, 0, .25); bacheAt(p + 55, 0, -.3); bacheAt(p + 90, 0, .3);
-  trafficAt(p + 70, .5, .38, 'auto_viejo'); // más lento: el terreno también los frena a ellos
+  trafficAt(p + 70, .5, .78, 'auto_viejo'); // más lento que el resto (el terreno también los frena), pero ya no "a velocidad de poste"
   fuelAt(p + 115, 1, .3);
   // segunda aparición del Rastrojero (canon de la serie, ver PROMPT_CAP2_SUPERABUELA.md), ya en el
   // barrio de tierra: el jugador lo conoce del debut en asfalto de más arriba, así que acá suma el
   // agarre reducido del terreno como escalón real de dificultad, no como sorpresa acumulada.
-  trafficAt(p + 128, .55, .48, 'rastrojero', { swerve:true, swerveTarget:-.15, swerveDur:1.2, hitW:.27 });
+  trafficAt(p + 128, .55, .87, 'rastrojero', { swerve:true, swerveTarget:-.15, swerveDur:1.2, hitW:.27 });
 
   p = segments.length;
   withTerrain('dirt', () => addCurve(190, -1.8, 0)); // curve negativo: empuja hacia positivo -> offset seguro negativo
@@ -881,7 +881,7 @@ function buildStage1(){
   withTerrain('dirt', () => addSCurve(220, 2));
   for (let i = p; i < p + 220; i += 3) decoAt(i, -1, 'cerco');
   bacheAt(p + 30, 0, .3); bacheAt(p + 55, 0, .3); // primera mitad curve=+2 empuja negativo -> offset seguro positivo
-  trafficAt(p + 95, -.5, .45, 'auto_g');
+  trafficAt(p + 95, -.5, .86, 'auto_g');
   bacheAt(p + 150, 0, -.3); bacheAt(p + 180, 0, -.3); // segunda mitad curve=-2 empuja positivo -> offset seguro negativo
   fuelAt(p + 200, 1, .3);
 
@@ -902,7 +902,7 @@ function buildStage1(){
   for (let i = p; i < p + 170; i += 3) decoAt(i, i % 6 ? -1 : 1, i % 11 < 5 ? 'arbol' : 'arbol2');
   obstacleAt(p + 25, 0, 'cono', .35, .15); // primera mitad +2.4 empuja negativo -> offset seguro positivo
   obstacleAt(p + 110, 0, 'cono', -.35, .15); // segunda mitad -2.4 empuja positivo -> offset seguro negativo
-  trafficAt(p + 140, .5, .55, 'auto_r', { swerve:true, swerveTarget:-.2, swerveDur:1 });
+  trafficAt(p + 140, .5, .91, 'auto_r', { swerve:true, swerveTarget:-.2, swerveDur:1 });
 
   p = segments.length;
   withTerrain('adoquin', () => addSCurve(170, -2.4)); // arranca al revés de la anterior, para variar el ritmo del zigzag
@@ -918,8 +918,8 @@ function buildStage1(){
   contenedorAt(p + 18, 1, .4);
   checkpointAt(p + 90);
   fuelAt(p + 150, -1, .32);
-  trafficAt(p + 60, -.5, .5, 'auto_viejo', { swerve:true, swerveTarget:.25, swerveDur:1.2 });
-  trafficAt(p + 105, -.5, .5, 'rastrojero', { swerve:true, swerveTarget:.2, swerveDur:1.1, hitW:.27 });
+  trafficAt(p + 60, -.5, .88, 'auto_viejo', { swerve:true, swerveTarget:.25, swerveDur:1.2 });
+  trafficAt(p + 105, -.5, .88, 'rastrojero', { swerve:true, swerveTarget:.2, swerveDur:1.1, hitW:.27 });
 
   // última curva difícil (misma intensidad que antes, pero ya con mucho recorrido de práctica encima)
   p = segments.length;
@@ -927,7 +927,7 @@ function buildStage1(){
   for (let i = p; i < p + 200; i += 3) decoAt(i, -1, i % 10 < 5 ? 'arbol' : 'cerco');
   obstacleAt(p + 60, 0, 'cono', .35, .15); // curve positivo empuja negativo -> offset seguro positivo
   obstacleAt(p + 130, 0, 'cono', .3, .15);
-  trafficAt(p + 100, .55, .55, 'auto_g', { swerve:true, swerveTarget:0, swerveDur:1 });
+  trafficAt(p + 100, .55, .91, 'auto_g', { swerve:true, swerveTarget:0, swerveDur:1 });
   checkpointAt(p + 180);
 
   // recta de cierre
@@ -939,7 +939,7 @@ function buildStage1(){
   fuelAt(p + 80, 1, .35);
   camionAt(p + 95, -1, .5);
   decoAt(p + 115, -1, 'colectivo', 1.5);
-  trafficAt(p + 128, .5, .55, 'rastrojero', { swerve:true, swerveTarget:-.2, swerveDur:1, hitW:.27 });
+  trafficAt(p + 128, .5, .91, 'rastrojero', { swerve:true, swerveTarget:-.2, swerveDur:1, hitW:.27 });
   addStraight(50);
 
   addSpaceZone(); // despegue -> corredor de asteroides/satélites -> aterrizaje, justo antes de la entrega del auto
@@ -1100,7 +1100,11 @@ function checkJumps(segment){
     SFX.jump();
   }
 }
-const TRAFFIC_START_RANGE = ROAD.SEG_LEN * 22;
+// antes 22 segmentos: el auto de tráfico quedaba clavado (parado, como un poste) hasta último momento
+// y recién ahí arrancaba a moverse — por eso "se pasaba a la misma velocidad que un obstáculo fijo".
+// Con 70 arranca mucho antes de que el jugador lo tenga encima, así da tiempo a leerlo moviéndose a su
+// propia velocidad (ver speedMul en cada trafficAt) antes de alcanzarlo.
+const TRAFFIC_START_RANGE = ROAD.SEG_LEN * 70;
 function checkTraffic(dt){
   for (const t of traffic){
     // el auto de tráfico queda parado (no avanza) hasta que el jugador se acerca lo suficiente; si arrancara
@@ -1555,28 +1559,32 @@ function drawDeco(kind, x, y, scale, side){
     ctx.beginPath(); ctx.arc(-48,-64,6,0,7); ctx.fill(); ink(ctx,2); ctx.stroke();
   } else if (kind === 'rastrojero'){
     // Rastrojero canon de la serie (assets/prompts/PROMPT_CAP2_SUPERABUELA.md): verde oliva, caja de
-    // madera, motor fumando. Se usa como tráfico (trafficAt con swerve) para que se cruce de carril y
-    // embista, no como decorado fijo.
-    groundShadow(46, 9, 1);
+    // madera, motor fumando. Se usa como tráfico (trafficAt con swerve), viaja en el mismo sentido que
+    // nosotros — por eso va de atrás, simétrico como auto_viejo/auto_r/auto_g, no de perfil (el dibujo
+    // anterior tenía la cabina a un lado y la caja al otro, por eso "andaba de costado" aunque avanzara
+    // derecho).
+    groundShadow(44, 9, 1);
     const puff = (Math.sin(performance.now()/140) + 1) / 2;
     ctx.save(); ctx.fillStyle = '#8a9088';
     for (let k = 0; k < 3; k++){
-      ctx.globalAlpha = .38 * (1 - k*.22) * (1 - puff*.3);
-      const py = -6 - k*14 - puff*10, r = 6 + k*4 + puff*3;
-      ctx.beginPath(); ctx.arc(-34 - k*5, py, r, 0, 7); ctx.fill();
+      ctx.globalAlpha = .34 * (1 - k*.22) * (1 - puff*.3);
+      const py = -36 - k*14 - puff*10, r = 5 + k*3.5 + puff*2.5;
+      ctx.beginPath(); ctx.arc(30 + k*4, py, r, 0, 7); ctx.fill(); // caño de escape a un costado: detalle menor, no rompe la simetría general del vehículo
     }
     ctx.restore();
-    const cab = ctx.createLinearGradient(-40,-46,-40,0); cab.addColorStop(0,'#8f9a5a'); cab.addColorStop(1,'#6b7440');
-    ctx.fillStyle = cab; ink(ctx, 3);
-    ctx.beginPath(); ctx.moveTo(-40,0); ctx.lineTo(-36,-24); ctx.quadraticCurveTo(-20,-40,4,-38); ctx.lineTo(10,-4); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#bfe6f5'; ink(ctx,2.4);
-    ctx.beginPath(); ctx.moveTo(-28,-26); ctx.quadraticCurveTo(-14,-36,0,-34); ctx.lineTo(-4,-20); ctx.lineTo(-24,-18); ctx.closePath(); ctx.fill(); ctx.stroke();
-    const box = ctx.createLinearGradient(0,-44,0,0); box.addColorStop(0,'#a9793f'); box.addColorStop(1,'#7c5427');
+    // caja de madera: atrás y un poco más alta que la cabina, como la carga asomando de un rastrojero cargado
+    const box = ctx.createLinearGradient(0,-56,0,-8); box.addColorStop(0,'#a9793f'); box.addColorStop(1,'#7c5427');
     ctx.fillStyle = box; ink(ctx,3);
-    ctx.fillRect(8,-44,34,44); ctx.strokeRect(8,-44,34,44);
+    ctx.fillRect(-30,-56,60,48); ctx.strokeRect(-30,-56,60,48);
     ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 2;
-    for (const lx of [16,24,32]){ ctx.beginPath(); ctx.moveTo(lx,-44); ctx.lineTo(lx,0); ctx.stroke(); }
-    for (const wx of [-22, 26]){
+    for (const lx of [-18,-6,6,18]){ ctx.beginPath(); ctx.moveTo(lx,-56); ctx.lineTo(lx,-8); ctx.stroke(); }
+    // cabina, simétrica, delante/abajo de la caja — misma convención de "visto de atrás" que el resto del tráfico
+    const cab = ctx.createLinearGradient(-38,-32,-38,0); cab.addColorStop(0,'#8f9a5a'); cab.addColorStop(1,'#6b7440');
+    ctx.fillStyle = cab; ink(ctx, 3);
+    ctx.beginPath(); ctx.moveTo(-38,0); ctx.lineTo(-34,-18); ctx.quadraticCurveTo(-18,-30,0,-29); ctx.quadraticCurveTo(18,-30,34,-18); ctx.lineTo(38,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#bfe6f5'; ink(ctx,2.4);
+    ctx.beginPath(); ctx.moveTo(-23,-19); ctx.quadraticCurveTo(0,-26,23,-19); ctx.lineTo(19,-10); ctx.lineTo(-19,-10); ctx.closePath(); ctx.fill(); ctx.stroke();
+    for (const wx of [-24, 24]){
       ctx.fillStyle = '#141414'; ctx.beginPath(); ctx.arc(wx,2,10,0,7); ctx.fill(); ink(ctx,2); ctx.stroke();
       ctx.fillStyle = '#9aa0a4'; ctx.beginPath(); ctx.arc(wx,2,4.2,0,7); ctx.fill();
     }
